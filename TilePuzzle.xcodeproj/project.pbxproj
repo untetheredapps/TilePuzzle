@@ -25,6 +25,8 @@
 		FD1B09A2179B15F500949648 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = FD1B09A0179B15F500949648 /* InfoPlist.strings */; };
 		FD1B09A5179B15F500949648 /* TilePuzzleTests.m in Sources */ = {isa = PBXBuildFile; fileRef = FD1B09A4179B15F500949648 /* TilePuzzleTests.m */; };
 		FD1B09AF179B19BC00949648 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FD1B09AE179B19BC00949648 /* QuartzCore.framework */; };
+		FD1B09B2179B2C4300949648 /* globe.jpg in Resources */ = {isa = PBXBuildFile; fileRef = FD1B09B1179B2C4300949648 /* globe.jpg */; };
+		FD1B09B3179B2C4300949648 /* globe.jpg in Resources */ = {isa = PBXBuildFile; fileRef = FD1B09B1179B2C4300949648 /* globe.jpg */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -62,6 +64,7 @@
 		FD1B09A3179B15F500949648 /* TilePuzzleTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TilePuzzleTests.h; sourceTree = "<group>"; };
 		FD1B09A4179B15F500949648 /* TilePuzzleTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TilePuzzleTests.m; sourceTree = "<group>"; };
 		FD1B09AE179B19BC00949648 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		FD1B09B1179B2C4300949648 /* globe.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = globe.jpg; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -130,6 +133,7 @@
 				FD1B098E179B15F500949648 /* ViewController.h */,
 				FD1B098F179B15F500949648 /* ViewController.m */,
 				FD1B0977179B15F500949648 /* Supporting Files */,
+				FD1B09B0179B2C2600949648 /* Resources */,
 			);
 			path = TilePuzzle;
 			sourceTree = "<group>";
@@ -165,6 +169,14 @@
 				FD1B09A0179B15F500949648 /* InfoPlist.strings */,
 			);
 			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		FD1B09B0179B2C2600949648 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				FD1B09B1179B2C4300949648 /* globe.jpg */,
+			);
+			name = Resources;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -244,6 +256,7 @@
 				FD1B0987179B15F500949648 /* Default-568h@2x.png in Resources */,
 				FD1B098A179B15F500949648 /* MainStoryboard_iPhone.storyboard in Resources */,
 				FD1B098D179B15F500949648 /* MainStoryboard_iPad.storyboard in Resources */,
+				FD1B09B2179B2C4300949648 /* globe.jpg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -252,6 +265,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FD1B09A2179B15F500949648 /* InfoPlist.strings in Resources */,
+				FD1B09B3179B2C4300949648 /* globe.jpg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
