@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		FD14ACD7179B328F00294937 /* Tile.m in Sources */ = {isa = PBXBuildFile; fileRef = FD14ACD6179B328F00294937 /* Tile.m */; };
+		FD14ACD8179B328F00294937 /* Tile.m in Sources */ = {isa = PBXBuildFile; fileRef = FD14ACD6179B328F00294937 /* Tile.m */; };
+		FD14ACDB179B33C900294937 /* TilesForRect.m in Sources */ = {isa = PBXBuildFile; fileRef = FD14ACDA179B33C900294937 /* TilesForRect.m */; };
+		FD14ACDC179B33C900294937 /* TilesForRect.m in Sources */ = {isa = PBXBuildFile; fileRef = FD14ACDA179B33C900294937 /* TilesForRect.m */; };
 		FD1B0971179B15F500949648 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FD1B0970179B15F500949648 /* UIKit.framework */; };
 		FD1B0973179B15F500949648 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FD1B0972179B15F500949648 /* Foundation.framework */; };
 		FD1B0975179B15F500949648 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FD1B0974179B15F500949648 /* CoreGraphics.framework */; };
@@ -40,6 +44,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		FD14ACD5179B328F00294937 /* Tile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Tile.h; sourceTree = "<group>"; };
+		FD14ACD6179B328F00294937 /* Tile.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Tile.m; sourceTree = "<group>"; };
+		FD14ACD9179B33C900294937 /* TilesForRect.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TilesForRect.h; sourceTree = "<group>"; };
+		FD14ACDA179B33C900294937 /* TilesForRect.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TilesForRect.m; sourceTree = "<group>"; };
 		FD1B096D179B15F500949648 /* TilePuzzle.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TilePuzzle.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FD1B0970179B15F500949648 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		FD1B0972179B15F500949648 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -132,6 +140,10 @@
 				FD1B098B179B15F500949648 /* MainStoryboard_iPad.storyboard */,
 				FD1B098E179B15F500949648 /* ViewController.h */,
 				FD1B098F179B15F500949648 /* ViewController.m */,
+				FD14ACD5179B328F00294937 /* Tile.h */,
+				FD14ACD6179B328F00294937 /* Tile.m */,
+				FD14ACD9179B33C900294937 /* TilesForRect.h */,
+				FD14ACDA179B33C900294937 /* TilesForRect.m */,
 				FD1B0977179B15F500949648 /* Supporting Files */,
 				FD1B09B0179B2C2600949648 /* Resources */,
 			);
@@ -295,6 +307,8 @@
 				FD1B097D179B15F500949648 /* main.m in Sources */,
 				FD1B0981179B15F500949648 /* AppDelegate.m in Sources */,
 				FD1B0990179B15F500949648 /* ViewController.m in Sources */,
+				FD14ACD7179B328F00294937 /* Tile.m in Sources */,
+				FD14ACDB179B33C900294937 /* TilesForRect.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -303,6 +317,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				FD1B09A5179B15F500949648 /* TilePuzzleTests.m in Sources */,
+				FD14ACD8179B328F00294937 /* Tile.m in Sources */,
+				FD14ACDC179B33C900294937 /* TilesForRect.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

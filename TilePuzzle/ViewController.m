@@ -8,10 +8,16 @@
 
 #import "ViewController.h"
 #import <QuartzCore/QuartzCore.h>
+#import "TilesForRect.h"
+#import "Tile.h"
+
+#define MAX_ROWS 2
+#define MAX_COLUMNS 2
 
 @interface ViewController ()
 
 @property (nonatomic, strong) UIImageView *sourceImageView;
+@property (nonatomic, strong) TilesForRect *tilesForRect;
 
 @end
 
@@ -35,12 +41,28 @@
     self.sourceImageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"globe.jpg"]];
     self.sourceImageView.center = CGPointMake(roundf(self.view.bounds.size.width / 2), roundf(self.view.bounds.size.height / 2));
     [self.view addSubview:self.sourceImageView];
+    
+    [self initModelForNewGame];
 }
 
 - (void)didReceiveMemoryWarning
 {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
+}
+
+#pragma mark - Private methods
+
+- (void)initModelForNewGame {
+    self.tilesForRect = [[TilesForRect alloc] initWithTilesForMaxRows:MAX_ROWS  maxColumns:MAX_COLUMNS];
+    NSLog(@"After init, tilesForRect:%@", self.tilesForRect);
+    
+    [self.tilesForRect randomizeTileLocations];
+    NSLog(@"After randomize, tilesForRect:%@", self.tilesForRect);
+    
+    Tile *tile = [self.tilesForRect getRandomTile];
+    tile.hidden = YES;
+    NSLog(@"After hiding one, tilesForRect:%@", self.tilesForRect);  
 }
 
 @end
