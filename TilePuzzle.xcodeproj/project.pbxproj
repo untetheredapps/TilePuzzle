@@ -24,6 +24,7 @@
 		FD1B099A179B15F500949648 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FD1B0972179B15F500949648 /* Foundation.framework */; };
 		FD1B09A2179B15F500949648 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = FD1B09A0179B15F500949648 /* InfoPlist.strings */; };
 		FD1B09A5179B15F500949648 /* TilePuzzleTests.m in Sources */ = {isa = PBXBuildFile; fileRef = FD1B09A4179B15F500949648 /* TilePuzzleTests.m */; };
+		FD1B09AF179B19BC00949648 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FD1B09AE179B19BC00949648 /* QuartzCore.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -60,6 +61,7 @@
 		FD1B09A1179B15F500949648 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		FD1B09A3179B15F500949648 /* TilePuzzleTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TilePuzzleTests.h; sourceTree = "<group>"; };
 		FD1B09A4179B15F500949648 /* TilePuzzleTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TilePuzzleTests.m; sourceTree = "<group>"; };
+		FD1B09AE179B19BC00949648 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,6 +69,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FD1B09AF179B19BC00949648 /* QuartzCore.framework in Frameworks */,
 				FD1B0971179B15F500949648 /* UIKit.framework in Frameworks */,
 				FD1B0973179B15F500949648 /* Foundation.framework in Frameworks */,
 				FD1B0975179B15F500949648 /* CoreGraphics.framework in Frameworks */,
@@ -89,6 +92,7 @@
 		FD1B0964179B15F500949648 = {
 			isa = PBXGroup;
 			children = (
+				FD1B09AE179B19BC00949648 /* QuartzCore.framework */,
 				FD1B0976179B15F500949648 /* TilePuzzle */,
 				FD1B099D179B15F500949648 /* TilePuzzleTests */,
 				FD1B096F179B15F500949648 /* Frameworks */,
@@ -467,6 +471,7 @@
 				FD1B09AA179B15F500949648 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		FD1B09AB179B15F500949648 /* Build configuration list for PBXNativeTarget "TilePuzzleTests" */ = {
 			isa = XCConfigurationList;
@@ -475,6 +480,7 @@
 				FD1B09AD179B15F500949648 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
