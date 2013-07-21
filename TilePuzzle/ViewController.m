@@ -14,11 +14,15 @@
 #define MAX_ROWS 4
 #define MAX_COLUMNS 4
 
+#define IMAGE_NAME @"globe.jpg"
+
 #define BORDER_THICKNESS 1.0
+
+#define VIEW_MARGIN 10.0
 
 #define BORDER_COLOR lightGrayColor
 
-#define EPSILON 1.0f
+#define EPSILON 1.0
 
 #define TILE_VIEW_ARRAY_INDEX_TILE 0
 #define TILE_VIEW_ARRAY_INDEX_VIEW 1
@@ -67,7 +71,6 @@
 
 - (void)viewWillAppear:(BOOL)animated {
     // Establish the source image and geometry.
-    self.sourceImage = [UIImage imageNamed:@"globe.jpg"];
     UIImageView *sourceImageView = [[UIImageView alloc] initWithImage:self.sourceImage];
     sourceImageView.center = CGPointMake(roundf(self.view.bounds.size.width / 2), roundf(self.view.bounds.size.height / 2));
     self.sourceImageViewFrame = sourceImageView.frame;
@@ -89,6 +92,51 @@
 }
 
 #pragma mark - Private methods
+
+// Lazy getter.
+- (UIImage *)sourceImage {
+    if (!_sourceImage) {
+        // If everything fits in all rotations, we will use the full size image.  Otherwise, we will resize once for the device.
+        _sourceImage = [UIImage imageNamed:IMAGE_NAME];
+        
+        CGSize imageSize = _sourceImage.size;
+        CGSize viewSize = self.view.bounds.size;
+        CGFloat margin = [UIApplication sharedApplication].statusBarFrame.size.height + VIEW_MARGIN;
+        
+        // Max dimension is the minimum of image dimension and both view dimensions.
+        CGFloat maxWidth = fminf(imageSize.width, viewSize.width - BORDER_THICKNESS * 2.0 - margin);
+        maxWidth = fminf(maxWidth, viewSize.height - BORDER_THICKNESS * 2.0);
+        
+        CGFloat maxHeight = fminf(imageSize.width, viewSize.width - BORDER_THICKNESS * 2.0 - margin);
+        maxHeight = fminf(maxHeight, viewSize.height - BORDER_THICKNESS * 2.0);
+       
+        CGFloat widthRatio = 1.0;
+        if (maxWidth < imageSize.width) {
+            widthRatio = maxWidth / imageSize.width;
+        }
+        
+        CGFloat heightRatio = 1.0;
+        if (maxHeight < imageSize.height) {
+            heightRatio = maxHeight / imageSize.height;
+        }
+        
+        if (widthRatio != 1.0 || heightRatio != 1.0) {
+            CGFloat minRatio = fminf(widthRatio, heightRatio);
+            CGFloat width = imageSize.width * minRatio;
+            CGFloat height = imageSize.height * minRatio;
+            
+            UIGraphicsBeginImageContext(CGSizeMake(width, height));
+            UIGraphicsGetCurrentContext();
+            [_sourceImage drawInRect: CGRectMake(0, 0, width, height)];
+            UIImage *reducedImage = UIGraphicsGetImageFromCurrentImageContext();
+            UIGraphicsEndImageContext();
+            _sourceImage = reducedImage;
+        }
+    }
+    
+    return _sourceImage;
+}
+
 
 - (void)initModelForNewGame {
     self.tilesForRect = [[TilesForRect alloc] initWithTilesForMaxRows:MAX_ROWS  maxColumns:MAX_COLUMNS];
@@ -294,6 +342,7 @@
             subview.center = newSubviewCenter;
         }
         
+        // TODO: Confirm whether we need to handle UIGestureRecognizerStateCancelled and UIGestureRecognizerStateFailed.
         if (panGestureRecognizer.state == UIGestureRecognizerStateEnded) {
             CGFloat distanceStartStopX = fabsf(startCenter.x - stopCenter.x);
             CGFloat distanceStartStopY = fabsf(startCenter.y - stopCenter.y);
