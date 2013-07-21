@@ -96,24 +96,30 @@
     // Create tiles.
     for (NSUInteger row = 0; row < MAX_ROWS; row ++) {
         for (NSUInteger column = 0; column < MAX_COLUMNS; column++) {
-            //Tile *tile = [self.tilesForRect getTileForRow:row column:column];
-            UIImageView *tileImageView = [[UIImageView alloc] initWithImage:self.sourceImage];
-            
-            // Tile frame corresponds to row and column.
-            CGRect frameRect;
-            frameRect.size.width = roundf(tileWidth - BORDER_THICKNESS * 2.0);
-            frameRect.size.height = roundf(tileHeight - BORDER_THICKNESS * 2.0);
-            frameRect.origin.x = roundf(row * tileWidth + BORDER_THICKNESS);
-            frameRect.origin.y = roundf(column * tileHeight + BORDER_THICKNESS);
-            tileImageView.frame = frameRect;
-            
-            // Tile contents correspond to row and column (for now).
-            CGRect cropRect = frameRect;
-            CGImageRef imageRef = CGImageCreateWithImageInRect([self.sourceImage CGImage], cropRect);
-            [tileImageView setImage:[UIImage imageWithCGImage:imageRef]];
-            CGImageRelease(imageRef);
-
-            [self.tilesContainerView addSubview:tileImageView];
+            Tile *tile = [self.tilesForRect getTileForRow:row column:column];
+            if (!tile.hidden) {
+                UIImageView *tileImageView = [[UIImageView alloc] initWithImage:self.sourceImage];
+                
+                // Tile frame corresponds to location on display.
+                CGRect frameRect;
+                frameRect.size.width = roundf(tileWidth - BORDER_THICKNESS * 2.0);
+                frameRect.size.height = roundf(tileHeight - BORDER_THICKNESS * 2.0);
+                frameRect.origin.x = roundf(row * tileWidth + BORDER_THICKNESS);
+                frameRect.origin.y = roundf(column * tileHeight + BORDER_THICKNESS);
+                tileImageView.frame = frameRect;
+                
+                // Tile content corresponds to row and column of tiles original location.
+                CGRect cropRect;
+                cropRect.size.width = roundf(tileWidth - BORDER_THICKNESS * 2.0);
+                cropRect.size.height = roundf(tileHeight - BORDER_THICKNESS * 2.0);
+                cropRect.origin.x = roundf(tile.originalRow * tileWidth + BORDER_THICKNESS);
+                cropRect.origin.y = roundf(tile.originalColumn * tileHeight + BORDER_THICKNESS);
+                CGImageRef imageRef = CGImageCreateWithImageInRect([self.sourceImage CGImage], cropRect);
+                [tileImageView setImage:[UIImage imageWithCGImage:imageRef]];
+                CGImageRelease(imageRef);
+                
+                [self.tilesContainerView addSubview:tileImageView];
+            }
         }
     }
 }
