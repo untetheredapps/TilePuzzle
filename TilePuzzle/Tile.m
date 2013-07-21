@@ -28,15 +28,15 @@
     NSMutableString *s = [NSMutableString string];
     [s appendFormat:@"<%@: %p>", [self class], self];
     [s appendString:@", "];
-    [s appendFormat:@"originalRow:%u", self.originalRow];
+    [s appendFormat:@"originalRow:%d", self.originalRow];
     [s appendString:@", "];
-    [s appendFormat:@"originalColumn:%u", self.originalColumn];
+    [s appendFormat:@"originalColumn:%d", self.originalColumn];
     [s appendString:@", "];
-    [s appendFormat:@"currentRow:%u", self.currentRow];
+    [s appendFormat:@"currentRow:%d", self.currentRow];
     [s appendString:@", "];
-    [s appendFormat:@"currentColumn:%u", self.currentColumn];
+    [s appendFormat:@"currentColumn:%d", self.currentColumn];
     [s appendString:@", "];
-    [s appendFormat:@"hidden:%u", self.hidden];
+    [s appendFormat:@"hidden:%@", (self.hidden ? @"YES" : @"NO")];
     return [NSString stringWithString:s];
 }
 

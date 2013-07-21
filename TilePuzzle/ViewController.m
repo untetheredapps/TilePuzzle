@@ -105,8 +105,17 @@
                 borderFrame.origin.y = roundf(row * self.tileHeight);
                 UIView *borderView = [[UIView alloc] initWithFrame:borderFrame];
                 borderView.backgroundColor = [UIColor BORDER_COLOR];
+
+                // Configure taps.
                 UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapFrom:)];
                 [borderView addGestureRecognizer:tapGestureRecognizer];
+
+                // Configure swipes.
+                [self addSwipeGestureRecognizerDirection:UISwipeGestureRecognizerDirectionRight view:borderView];
+                [self addSwipeGestureRecognizerDirection:UISwipeGestureRecognizerDirectionLeft view:borderView];
+                [self addSwipeGestureRecognizerDirection:UISwipeGestureRecognizerDirectionDown view:borderView];
+                [self addSwipeGestureRecognizerDirection:UISwipeGestureRecognizerDirectionUp view:borderView];
+
                 [self.tilesContainerView addSubview:borderView];
                 
                 // Image within border.
@@ -130,49 +139,43 @@
                 
                 [borderView addSubview:tileImageView];
             } else {
-                NSLog(@"row:%u column:%u hidden tile:%@", row, column, tile);
+                NSLog(@"row:%d column:%d hidden tile:%@", row, column, tile);
                 self.hiddenTile = tile;
             }
         }
     }
 }
 
-- (void)handleTapFrom:(UITapGestureRecognizer *)recognizer {
-    NSLog(@"recognizer:%@", recognizer);
+- (void)addSwipeGestureRecognizerDirection:(UISwipeGestureRecognizerDirection)direction view:(UIView *)view {
+    UISwipeGestureRecognizer *swipeGestureRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(handleSwipeFrom:)];
+    swipeGestureRecognizer.direction =  direction;
+    [view addGestureRecognizer:swipeGestureRecognizer];
+}
+
+- (void)fromTileView:(UIView *)tileView toRow:(NSInteger *)row column:(NSInteger *)column {
+    NSLog(@"tileView:%@", tileView);
     
     // Deduce row and column from mid-point of view; a little cheezy, but should be safe.
-    NSInteger tapRow = (recognizer.view.frame.origin.y + recognizer.view.frame.size.height / 2) / self.tileHeight;
-    NSInteger tapColumn = (recognizer.view.frame.origin.x + recognizer.view.frame.size.width / 2) / self.tileWidth;
+    *row = (tileView.frame.origin.y + tileView.frame.size.height / 2) / self.tileHeight;
+    *column = (tileView.frame.origin.x + tileView.frame.size.width / 2) / self.tileWidth;
+}
+
+- (void)handleGestureForTapRow:(NSInteger)tapRow tapColumn:(NSInteger)tapColumn {
+    NSLog(@"tapRow:%d tapColumn:%d", tapRow, tapColumn);
     
     BOOL tilesMoved = NO;
     if (tapRow == self.hiddenTile.currentRow) {
         if (tapColumn < self.hiddenTile.currentColumn) {
-            // Slide everything right.
-            for (NSInteger c = self.hiddenTile.currentColumn - 1; c >= tapColumn; c--) {
-                Tile *tile = [self.tilesForRect getTileForRow:tapRow column:c];
-                [self.tilesForRect setTile:tile forRow:tapRow column:(c + 1)];
-            }
+            [self moveTilesRightForRow:tapRow leftColumn:tapColumn rightColumn:self.hiddenTile.currentColumn];
         } else {
-            // Slide everything left.
-            for (NSInteger c = self.hiddenTile.currentColumn + 1; c <= tapColumn; c++) {
-                Tile *tile = [self.tilesForRect getTileForRow:tapRow column:c];
-                [self.tilesForRect setTile:tile forRow:tapRow column:(c - 1)];
-            }
+            [self moveTilesLeftForRow:tapRow leftColumn:self.hiddenTile.currentColumn rightColumn:tapColumn];
         }
         tilesMoved = YES;
     } else if (tapColumn == self.hiddenTile.currentColumn) {
         if (tapRow < self.hiddenTile.currentRow) {
-            // Slide everything down.
-            for (NSInteger r = self.hiddenTile.currentRow - 1; r >= tapRow; r--) {
-                Tile *tile = [self.tilesForRect getTileForRow:r column:tapColumn];
-                [self.tilesForRect setTile:tile forRow:(r + 1) column:tapColumn];
-            }
+            [self moveTilesDownForColumn:tapColumn topRow:tapRow bottomRow:self.hiddenTile.currentRow];
         } else {
-            // Slide everything up.
-            for (NSInteger r = self.hiddenTile.currentRow + 1; r <= tapRow; r++) {
-                Tile *tile = [self.tilesForRect getTileForRow:r column:tapColumn];
-                [self.tilesForRect setTile:tile forRow:(r - 1) column:tapColumn];
-            }
+            [self moveTilesUpForColumn:tapColumn topRow:self.hiddenTile.currentRow bottomRow:tapRow];
         }
         tilesMoved = YES;
     }
@@ -180,10 +183,88 @@
     if (tilesMoved) {
         // Hidden tile replaces the one just tapped.
         [self.tilesForRect setTile:self.hiddenTile forRow:tapRow column:tapColumn];
+        [self refreshViewForModel];
+    }    
+}
+
+- (void)handleGestureForSwipeDirection:(UISwipeGestureRecognizerDirection)direction startRow:(NSInteger)startRow startColumn:(NSInteger)startColumn {
+    NSLog(@"direction:%d startRow:%d startColumn:%d", direction, startRow, startColumn);
+
+    // If swipe makes sense ...
+    BOOL moveTiles = NO;
+    if (startRow == self.hiddenTile.currentRow) {
+        if (startColumn < self.hiddenTile.currentColumn) {
+            moveTiles = (direction == UISwipeGestureRecognizerDirectionRight);
+        } else {
+            moveTiles = (direction == UISwipeGestureRecognizerDirectionLeft);
+        }
+    } else if (startColumn == self.hiddenTile.currentColumn) {
+        if (startRow < self.hiddenTile.currentRow) {
+            moveTiles = (direction == UISwipeGestureRecognizerDirectionDown);
+        } else {
+            moveTiles = (direction == UISwipeGestureRecognizerDirectionUp);
+        }
     }
     
-    [self refreshViewForModel];
+    // ... handle it like a tap.
+    if (moveTiles) {
+        [self handleGestureForTapRow:startRow tapColumn:startColumn];
+    }
+}
 
+
+
+#pragma mark - 
+
+- (void)moveTilesRightForRow:(NSInteger)row leftColumn:(NSInteger)leftColumn rightColumn:(NSInteger)rightColumn {
+    // Start from right-most column.
+    for (NSInteger c = rightColumn - 1; c >= leftColumn; c--) {
+        Tile *tile = [self.tilesForRect getTileForRow:row column:c];
+        [self.tilesForRect setTile:tile forRow:row column:(c + 1)];
+    }
+}
+
+- (void)moveTilesLeftForRow:(NSInteger)row leftColumn:(NSInteger)leftColumn rightColumn:(NSInteger)rightColumn {
+    // Start from left-most column.
+    for (NSInteger c = leftColumn + 1; c <= rightColumn; c++) {
+        Tile *tile = [self.tilesForRect getTileForRow:row column:c];
+        [self.tilesForRect setTile:tile forRow:row column:(c - 1)];
+    }
+}
+
+- (void)moveTilesDownForColumn:(NSInteger)column topRow:(NSInteger)topRow bottomRow:(NSInteger)bottomRow {
+    // Start from bottom-most row.
+    for (NSInteger r = bottomRow - 1; r >= topRow; r--) {
+        Tile *tile = [self.tilesForRect getTileForRow:r column:column];
+        [self.tilesForRect setTile:tile forRow:(r + 1) column:column];
+    }
+}
+
+- (void)moveTilesUpForColumn:(NSInteger)column topRow:(NSInteger)topRow bottomRow:(NSInteger)bottomRow {
+    // Start from top-most row.
+    for (NSInteger r = topRow + 1; r <= bottomRow; r++) {
+        Tile *tile = [self.tilesForRect getTileForRow:r column:column];
+        [self.tilesForRect setTile:tile forRow:(r - 1) column:column];
+    }
+}
+
+
+#pragma mark -
+
+- (void)handleTapFrom:(UITapGestureRecognizer *)recognizer {
+    NSLog(@"recognizer:%@", recognizer);
+    NSInteger row;
+    NSInteger column;
+    [self fromTileView:recognizer.view toRow:&row column:&column];
+    [self handleGestureForTapRow:row tapColumn:column];
+}
+
+- (void)handleSwipeFrom:(UISwipeGestureRecognizer *)recognizer {
+    NSLog(@"recognizer:%@", recognizer);
+    NSInteger row;
+    NSInteger column;
+    [self fromTileView:recognizer.view toRow:&row column:&column];
+    [self handleGestureForSwipeDirection:recognizer.direction startRow:row startColumn:column];
 }
 
 
