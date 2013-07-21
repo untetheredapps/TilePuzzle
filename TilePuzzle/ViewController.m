@@ -142,16 +142,48 @@
     NSUInteger row = (recognizer.view.frame.origin.y + recognizer.view.frame.size.height / 2) / self.tileHeight;
     NSUInteger column = (recognizer.view.frame.origin.x + recognizer.view.frame.size.width / 2) / self.tileWidth;
     
-    // Search left
-    NSUInteger foundColumn;
-    BOOL found = [self foundHiddenTileSearchingLeftFromRow:row column:column foundColumn:&foundColumn];
-    if (found) {
-        NSLog(@"foundColumn:%u", foundColumn);
-        [recognizer.view removeFromSuperview];
+    {
+        // Search left
+        NSUInteger foundColumn;
+        BOOL found = [self foundHiddenTileSearchingLeftFromRow:row column:column foundColumn:&foundColumn];
+        if (found) {
+            NSLog(@"Searching left foundColumn:%u", foundColumn);
+            [recognizer.view removeFromSuperview];
+        }
+    }
+    
+    {
+        // Search right
+        NSUInteger foundColumn;
+        BOOL found = [self foundHiddenTileSearchingRightFromRow:row column:column foundColumn:&foundColumn];
+        if (found) {
+            NSLog(@"Searching right foundColumn:%u", foundColumn);
+            [recognizer.view removeFromSuperview];
+        }
+    }
+    
+    {
+        // Search up
+        NSUInteger foundRow;
+        BOOL found = [self foundHiddenTileSearchingUpFromRow:row column:column foundRow:&foundRow];
+        if (found) {
+            NSLog(@"Searching up foundRow:%u", foundRow);
+            [recognizer.view removeFromSuperview];
+        }
+    }
+    
+    {
+        // Search down
+        NSUInteger foundRow;
+        BOOL found = [self foundHiddenTileSearchingDownFromRow:row column:column foundRow:&foundRow];
+        if (found) {
+            NSLog(@"Searching down foundRow:%u", foundRow);
+            [recognizer.view removeFromSuperview];
+        }
     }
     
 
-    
+   
 }
 
 - (BOOL)foundHiddenTileSearchingLeftFromRow:(NSUInteger)row column:(NSUInteger)column foundColumn:(NSUInteger *)foundColumn {
@@ -167,6 +199,43 @@
     return found;
 }
 
+- (BOOL)foundHiddenTileSearchingRightFromRow:(NSUInteger)row column:(NSUInteger)column foundColumn:(NSUInteger *)foundColumn {
+    BOOL found = NO;
+    for (NSInteger c = column; c < MAX_COLUMNS; c++) {
+        Tile *tile = [self.tilesForRect getTileForRow:row column:c];
+        if (tile.hidden) {
+            found = YES;
+            *foundColumn = c;
+            break;
+        }
+    }
+    return found;
+}
 
+- (BOOL)foundHiddenTileSearchingUpFromRow:(NSUInteger)row column:(NSUInteger)column foundRow:(NSUInteger *)foundRow {
+    BOOL found = NO;
+    for (NSInteger r = row; r >= 0; r--) {
+        Tile *tile = [self.tilesForRect getTileForRow:r column:column];
+        if (tile.hidden) {
+            found = YES;
+            *foundRow = r;
+            break;
+        }
+    }
+    return found;
+}
+
+- (BOOL)foundHiddenTileSearchingDownFromRow:(NSUInteger)row column:(NSUInteger)column foundRow:(NSUInteger *)foundRow {
+    BOOL found = NO;
+    for (NSInteger r = row; r < MAX_ROWS; r++) {
+        Tile *tile = [self.tilesForRect getTileForRow:r column:column];
+        if (tile.hidden) {
+            found = YES;
+            *foundRow = r;
+            break;
+        }
+    }
+    return found;
+}
 
 @end
