@@ -14,7 +14,7 @@
 #define MAX_ROWS 4
 #define MAX_COLUMNS 4
 
-#define BORDER_THICKNESS 5.0
+#define BORDER_THICKNESS 1.0
 
 #define BORDER_COLOR lightGrayColor
 
