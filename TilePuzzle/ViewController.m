@@ -26,9 +26,8 @@
 @interface ViewController ()
 
 @property (nonatomic, strong) UIImage *sourceImage;
-@property (nonatomic, strong) UIImageView *sourceImageView;
+@property (nonatomic, assign) CGRect sourceImageViewFrame;
 @property (nonatomic, strong) UIView *tilesContainerView;
-@property (nonatomic, strong) UIView *tilesContainerBorderView;
 @property (nonatomic, strong) TilesForRect *tilesForRect;
 @property (nonatomic, strong) Tile *hiddenTile;
 @property (nonatomic, assign) CGFloat tileWidth;
@@ -39,37 +38,48 @@
 @property (nonatomic, assign) NSInteger slideStopRow;
 @property (nonatomic, assign) NSInteger slideStopColumn;
 @property (nonatomic, strong) NSArray *tilesViewsToSlideArray;
+@property (nonatomic, strong) CAGradientLayer *gradientLayer;
 
 @end
 
 @implementation ViewController
 
-- (void)viewDidLoad
-{
+- (void)viewDidLoad {
     [super viewDidLoad];
 	// Do any additional setup after loading the view, typically from a nib.
     
     // Set the background to a top-light gray to bottom-dark gray gradient.
-    CAGradientLayer *gradient = [CAGradientLayer layer];
-    gradient.frame = self.view.bounds;
+    self.gradientLayer = [CAGradientLayer layer];
+    self.gradientLayer.frame = self.view.bounds;
     UIColor *topLightGrayColor = [UIColor colorWithRed:125/255.0 green:125/255.0 blue:125/255.0 alpha:1];
     UIColor *bottomDarkGrayColor = [UIColor colorWithRed:33/255.0 green:33/255.0 blue:33/255.0 alpha:1];
-    gradient.colors = [NSArray arrayWithObjects:(id)topLightGrayColor.CGColor, (id)bottomDarkGrayColor.CGColor, nil];
-    [self.view.layer addSublayer:gradient];
+    self.gradientLayer.colors = [NSArray arrayWithObjects:(id)topLightGrayColor.CGColor, (id)bottomDarkGrayColor.CGColor, nil];
+    [self.view.layer addSublayer:self.gradientLayer];
+    
+    // TODO: Find a better solution that tracks view frame automatically.
+    // Make transitions less noticeable by choosing a color used by the gradient.
+    self.view.backgroundColor = bottomDarkGrayColor;
+}
+
+- (void)willAnimateRotationToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation duration:(NSTimeInterval)duration {
+    self.gradientLayer.frame = self.view.bounds;
 }
 
 - (void)viewWillAppear:(BOOL)animated {
-    // Establish the source image.
+    // Establish the source image and geometry.
     self.sourceImage = [UIImage imageNamed:@"globe.jpg"];
-    self.sourceImageView = [[UIImageView alloc] initWithImage:self.sourceImage];
-    self.sourceImageView.center = CGPointMake(roundf(self.view.bounds.size.width / 2), roundf(self.view.bounds.size.height / 2));
-    [self.view addSubview:self.sourceImageView];
-    
-    self.tileWidth = self.sourceImageView.bounds.size.width / MAX_COLUMNS;
-    self.tileHeight = self.sourceImageView.bounds.size.height / MAX_ROWS;
+    UIImageView *sourceImageView = [[UIImageView alloc] initWithImage:self.sourceImage];
+    sourceImageView.center = CGPointMake(roundf(self.view.bounds.size.width / 2), roundf(self.view.bounds.size.height / 2));
+    self.sourceImageViewFrame = sourceImageView.frame;
+    self.tileWidth = sourceImageView.bounds.size.width / MAX_COLUMNS;
+    self.tileHeight = sourceImageView.bounds.size.height / MAX_ROWS;
     
     [self initModelForNewGame];
     [self refreshViewForModel];
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    self.gradientLayer.frame = self.view.bounds;   
 }
 
 - (void)didReceiveMemoryWarning
@@ -97,8 +107,15 @@
     [[self.view subviews] makeObjectsPerformSelector:@selector(removeFromSuperview)];
     
     // Establish container view for tiles.
-    self.tilesContainerView = [[UIView alloc] initWithFrame:self.sourceImageView.frame];
+    self.tilesContainerView = [[UIView alloc] initWithFrame:self.sourceImageViewFrame];
     self.tilesContainerView.backgroundColor = [UIColor clearColor];
+
+    // Keep it centered.
+    self.tilesContainerView.autoresizingMask = (UIViewAutoresizingFlexibleTopMargin |
+                                                UIViewAutoresizingFlexibleBottomMargin |
+                                                UIViewAutoresizingFlexibleLeftMargin |
+                                                UIViewAutoresizingFlexibleRightMargin);
+    
     [self.view addSubview:self.tilesContainerView];
     
     // Create tiles.
