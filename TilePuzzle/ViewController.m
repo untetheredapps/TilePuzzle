@@ -28,6 +28,10 @@
 @property (nonatomic, strong) Tile *hiddenTile;
 @property (nonatomic, assign) CGFloat tileWidth;
 @property (nonatomic, assign) CGFloat tileHeight;
+@property (nonatomic, assign) NSInteger panStartRow;
+@property (nonatomic, assign) NSInteger panStartColumn;
+@property (nonatomic, assign) NSInteger panStopRow;
+@property (nonatomic, assign) NSInteger panStopColumn;
 
 @end
 
@@ -116,6 +120,11 @@
                 [self addSwipeGestureRecognizerDirection:UISwipeGestureRecognizerDirectionDown view:borderView];
                 [self addSwipeGestureRecognizerDirection:UISwipeGestureRecognizerDirectionUp view:borderView];
 
+                // Configure dragging.
+                UIPanGestureRecognizer *panGestureRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePanFrom:)];
+                panGestureRecognizer.maximumNumberOfTouches = 1;
+                [borderView addGestureRecognizer:panGestureRecognizer];
+                
                 [self.tilesContainerView addSubview:borderView];
                 
                 // Image within border.
@@ -152,7 +161,7 @@
     [view addGestureRecognizer:swipeGestureRecognizer];
 }
 
-- (void)fromTileView:(UIView *)tileView toRow:(NSInteger *)row column:(NSInteger *)column {
+- (void)convertFromTileView:(UIView *)tileView toRow:(NSInteger *)row column:(NSInteger *)column {
     NSLog(@"tileView:%@", tileView);
     
     // Deduce row and column from mid-point of view; a little cheezy, but should be safe.
@@ -212,6 +221,29 @@
     }
 }
 
+- (void)determineFromStartRow:(NSInteger)startRow startColumn:(NSInteger)startColumn toStopRow:(NSInteger *)stopRow stopColumn:(NSInteger *)stopColumn {
+    NSLog(@"startRow:%d startColumn:%d", startRow, startColumn);
+    
+    *stopRow = startRow;
+    *stopColumn = startColumn;
+    if (startRow == self.hiddenTile.currentRow) {
+        if (startColumn < self.hiddenTile.currentColumn) {
+            *stopColumn = startColumn + 1;
+        } else {
+            *stopColumn = startColumn - 1;
+        }
+    } else if (startColumn == self.hiddenTile.currentColumn) {
+        if (startRow < self.hiddenTile.currentRow) {
+            *stopRow = startRow + 1;
+        } else {
+            *stopRow = startRow - 1;
+        }
+    }
+
+    NSLog(@"*stopRow:%d *stopColumn:%d", *stopRow, *stopColumn);
+}
+
+
 
 
 #pragma mark - 
@@ -251,23 +283,89 @@
 
 #pragma mark -
 
-- (void)handleTapFrom:(UITapGestureRecognizer *)recognizer {
-    NSLog(@"recognizer:%@", recognizer);
+- (void)handleTapFrom:(UITapGestureRecognizer *)tapGestureRecognizer {
+    NSLog(@"tapGestureRecognizer:%@", tapGestureRecognizer);
     NSInteger row;
     NSInteger column;
-    [self fromTileView:recognizer.view toRow:&row column:&column];
+    [self convertFromTileView:tapGestureRecognizer.view toRow:&row column:&column];
     [self handleGestureForTapRow:row tapColumn:column];
 }
 
-- (void)handleSwipeFrom:(UISwipeGestureRecognizer *)recognizer {
-    NSLog(@"recognizer:%@", recognizer);
+- (void)handleSwipeFrom:(UISwipeGestureRecognizer *)swipeGestureRecognizer {
+    NSLog(@"swipeGestureRecognizer:%@", swipeGestureRecognizer);
     NSInteger row;
     NSInteger column;
-    [self fromTileView:recognizer.view toRow:&row column:&column];
-    [self handleGestureForSwipeDirection:recognizer.direction startRow:row startColumn:column];
+    [self convertFromTileView:swipeGestureRecognizer.view toRow:&row column:&column];
+    [self handleGestureForSwipeDirection:swipeGestureRecognizer.direction startRow:row startColumn:column];
 }
 
+- (void)handlePanFrom:(UIPanGestureRecognizer *)panGestureRecognizer {
+    NSLog(@"panGestureRecognizer:%@", panGestureRecognizer);
 
+    if (panGestureRecognizer.state == UIGestureRecognizerStateBegan) {
+        // Establish and save start location.
+        NSInteger startRow;
+        NSInteger startColumn;
+        [self convertFromTileView:panGestureRecognizer.view toRow:&startRow column:&startColumn];
+        self.panStartRow = startRow;
+        self.panStartColumn = startColumn;
+        
+        // Determine and save stop location.
+        NSInteger stopRow;
+        NSInteger stopColumn;
+        [self determineFromStartRow:startRow startColumn:startColumn toStopRow:&stopRow stopColumn:&stopColumn];
+        self.panStopRow = stopRow;
+        self.panStopColumn = stopColumn;
+        
+        [panGestureRecognizer.view.superview bringSubviewToFront:panGestureRecognizer.view];
+    } else {
+        // Find boundary where we allow movement.
+        CGPoint center = [panGestureRecognizer locationInView:panGestureRecognizer.view.superview];
+        CGPoint startCenter = [self centerOfViewFromRow:self.panStartRow column:self.panStartColumn];
+        CGPoint stopCenter = [self centerOfViewFromRow:self.panStopRow column:self.panStopColumn];
+        
+        // Bound view center to rectangle (actually a vertical or horizontal line) bounded by startCenter and stopCenter.
+        CGFloat minX = fminf(startCenter.x, stopCenter.x);
+        CGFloat maxX = fmaxf(startCenter.x, stopCenter.x);
+        CGFloat minY = fminf(startCenter.y, stopCenter.y);
+        CGFloat maxY = fmaxf(startCenter.y, stopCenter.y);
+        center.x = fmaxf(center.x, minX);
+        center.x = fminf(center.x, maxX);
+        center.y = fmaxf(center.y, minY);
+        center.y = fminf(center.y, maxY);
+        
+        panGestureRecognizer.view.center = center;
+        
+        if (panGestureRecognizer.state == UIGestureRecognizerStateEnded) {
+            CGFloat distanceStartStopX = fabsf(startCenter.x - stopCenter.x);
+            CGFloat distanceStartStopY = fabsf(startCenter.y - stopCenter.y);
+            
+            if (distanceStartStopX > distanceStartStopY) {
+                // Horizontal pan.
+                CGFloat distanceFromStartX = fabsf(startCenter.x - center.x);
+                if (distanceFromStartX > distanceStartStopX / 2.0) {
+                    [self handleGestureForTapRow:self.panStartRow tapColumn:self.panStartColumn];
+                } else {
+                    [self refreshViewForModel];
+                }
+            } else {
+                // Vertical pan.
+                CGFloat distanceFromStartY = fabsf(startCenter.y - center.y);
+                if (distanceFromStartY > distanceStartStopY / 2.0) {
+                    [self handleGestureForTapRow:self.panStartRow tapColumn:self.panStartColumn];
+                } else {
+                    [self refreshViewForModel];
+                }                
+            }
+        }
+    }
+}
 
+- (CGPoint)centerOfViewFromRow:(NSInteger)row column:(NSInteger)column {
+    CGPoint center;
+    center.x = roundf(column * self.tileWidth + self.tileWidth / 2.0);
+    center.y = roundf(row * self.tileHeight + self.tileHeight / 2.0);
+    return center;
+}
 
 @end
