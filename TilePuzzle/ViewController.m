@@ -18,6 +18,8 @@
 
 #define BORDER_COLOR lightGrayColor
 
+#define EPSILON 1.0f
+
 @interface ViewController ()
 
 @property (nonatomic, strong) UIImage *sourceImage;
@@ -28,10 +30,12 @@
 @property (nonatomic, strong) Tile *hiddenTile;
 @property (nonatomic, assign) CGFloat tileWidth;
 @property (nonatomic, assign) CGFloat tileHeight;
+@property (nonatomic, assign) BOOL isPanning;
 @property (nonatomic, assign) NSInteger panStartRow;
 @property (nonatomic, assign) NSInteger panStartColumn;
 @property (nonatomic, assign) NSInteger panStopRow;
 @property (nonatomic, assign) NSInteger panStopColumn;
+@property (nonatomic, strong) NSArray *viewsToPanArray;
 
 @end
 
@@ -299,6 +303,70 @@
     [self handleGestureForSwipeDirection:swipeGestureRecognizer.direction startRow:row startColumn:column];
 }
 
+- (UIView *)tileViewForRow:(NSInteger)row column:(NSInteger)column {
+    UIView *tileView = nil;
+    
+    CGPoint center = [self centerOfViewFromRow:row column:column];
+    
+    for (UIView *view in self.tilesContainerView.subviews) {
+        CGFloat distanceX = fabsf(center.x - view.center.x);
+        CGFloat distanceY = fabsf(center.y - view.center.y);
+        if (distanceX < EPSILON && distanceY < EPSILON) {
+            tileView = view;
+            break;
+        }
+    }
+    
+    return tileView;
+}
+
+- (NSArray *)viewsInRow:(NSInteger)row aColumn:(NSInteger)aColumn {
+    NSLog(@"aColumn:%d", aColumn);
+    NSMutableArray *mutableArray = [NSMutableArray array];
+    
+    NSInteger startColumn = MIN(aColumn, self.hiddenTile.currentColumn);
+    NSInteger endColumn = MAX(aColumn, self.hiddenTile.currentColumn);
+    
+    for (NSInteger c = startColumn; c <= endColumn; c++) {
+        Tile *tile = [self.tilesForRect getTileForRow:row column:c];
+        if (tile && !tile.hidden) {
+            // There was a tile at the location; find associated view.
+            UIView *tileView = [self tileViewForRow:row column:c];
+            if (tileView) {
+                [mutableArray addObject:tileView];
+            } else {
+                NSAssert(NO, @"Yikes!");
+            }
+        }
+    }
+    
+    return [NSArray arrayWithArray:mutableArray];
+}
+
+- (NSArray *)viewsInColumn:(NSInteger)column aRow:(NSInteger)aRow {
+    NSLog(@"aRow:%d", aRow);
+    NSMutableArray *mutableArray = [NSMutableArray array];
+    
+    NSInteger startRow = MIN(aRow, self.hiddenTile.currentRow);
+    NSInteger endRow = MAX(aRow, self.hiddenTile.currentRow);
+    
+    for (NSInteger r = startRow; r <= endRow; r++) {
+        Tile *tile = [self.tilesForRect getTileForRow:r column:column];
+        if (tile && !tile.hidden) {
+            // There was a tile at the location; find associated view.
+            UIView *tileView = [self tileViewForRow:r column:column];
+            if (tileView) {
+                [mutableArray addObject:tileView];
+            } else {
+                NSAssert(NO, @"Yikes!");
+            }
+        }
+    }
+    
+    return [NSArray arrayWithArray:mutableArray];
+}
+
+
 - (void)handlePanFrom:(UIPanGestureRecognizer *)panGestureRecognizer {
     NSLog(@"panGestureRecognizer:%@", panGestureRecognizer);
 
@@ -307,20 +375,39 @@
         NSInteger startRow;
         NSInteger startColumn;
         [self convertFromTileView:panGestureRecognizer.view toRow:&startRow column:&startColumn];
-        self.panStartRow = startRow;
-        self.panStartColumn = startColumn;
         
-        // Determine and save stop location.
-        NSInteger stopRow;
-        NSInteger stopColumn;
-        [self determineFromStartRow:startRow startColumn:startColumn toStopRow:&stopRow stopColumn:&stopColumn];
-        self.panStopRow = stopRow;
-        self.panStopColumn = stopColumn;
+        self.isPanning = (startRow == self.hiddenTile.currentRow || startColumn == self.hiddenTile.currentColumn);
+        if (self.isPanning) {
+            self.panStartRow = startRow;
+            self.panStartColumn = startColumn;
+            
+            // Determine and save stop location.
+            NSInteger stopRow;
+            NSInteger stopColumn;
+            [self determineFromStartRow:startRow startColumn:startColumn toStopRow:&stopRow stopColumn:&stopColumn];
+            self.panStopRow = stopRow;
+            self.panStopColumn = stopColumn;
+            
+            if (startRow == stopRow) {
+                self.viewsToPanArray = [self viewsInRow:startRow aColumn:startColumn];
+            } else if (startColumn == stopColumn) {
+                self.viewsToPanArray = [self viewsInColumn:startColumn aRow:startRow];
+            } else {
+                NSAssert(NO, @"Yikes!");
+            }
+            
+            for (UIView *subview in self.viewsToPanArray) {
+                [panGestureRecognizer.view.superview bringSubviewToFront:subview];
+            }
+        }
+    }
+    
+    if (self.isPanning) {
+        // Every time.
         
-        [panGestureRecognizer.view.superview bringSubviewToFront:panGestureRecognizer.view];
-    } else {
         // Find boundary where we allow movement.
-        CGPoint center = [panGestureRecognizer locationInView:panGestureRecognizer.view.superview];
+        CGPoint oldCenter = panGestureRecognizer.view.center;
+        CGPoint newCenter = [panGestureRecognizer locationInView:panGestureRecognizer.view.superview];
         CGPoint startCenter = [self centerOfViewFromRow:self.panStartRow column:self.panStartColumn];
         CGPoint stopCenter = [self centerOfViewFromRow:self.panStopRow column:self.panStopColumn];
         
@@ -329,12 +416,20 @@
         CGFloat maxX = fmaxf(startCenter.x, stopCenter.x);
         CGFloat minY = fminf(startCenter.y, stopCenter.y);
         CGFloat maxY = fmaxf(startCenter.y, stopCenter.y);
-        center.x = fmaxf(center.x, minX);
-        center.x = fminf(center.x, maxX);
-        center.y = fmaxf(center.y, minY);
-        center.y = fminf(center.y, maxY);
+        newCenter.x = fmaxf(newCenter.x, minX);
+        newCenter.x = fminf(newCenter.x, maxX);
+        newCenter.y = fmaxf(newCenter.y, minY);
+        newCenter.y = fminf(newCenter.y, maxY);
         
-        panGestureRecognizer.view.center = center;
+        CGFloat distanceToMoveX = newCenter.x - oldCenter.x;
+        CGFloat distanceToMoveY = newCenter.y - oldCenter.y;
+        
+        for (UIView *subview in self.viewsToPanArray) {
+            CGPoint newSubviewCenter = subview.center;
+            newSubviewCenter.x += distanceToMoveX;
+            newSubviewCenter.y += distanceToMoveY;
+            subview.center = newSubviewCenter;
+        }
         
         if (panGestureRecognizer.state == UIGestureRecognizerStateEnded) {
             CGFloat distanceStartStopX = fabsf(startCenter.x - stopCenter.x);
@@ -342,7 +437,7 @@
             
             if (distanceStartStopX > distanceStartStopY) {
                 // Horizontal pan.
-                CGFloat distanceFromStartX = fabsf(startCenter.x - center.x);
+                CGFloat distanceFromStartX = fabsf(startCenter.x - newCenter.x);
                 if (distanceFromStartX > distanceStartStopX / 2.0) {
                     [self handleGestureForTapRow:self.panStartRow tapColumn:self.panStartColumn];
                 } else {
@@ -350,13 +445,14 @@
                 }
             } else {
                 // Vertical pan.
-                CGFloat distanceFromStartY = fabsf(startCenter.y - center.y);
+                CGFloat distanceFromStartY = fabsf(startCenter.y - newCenter.y);
                 if (distanceFromStartY > distanceStartStopY / 2.0) {
                     [self handleGestureForTapRow:self.panStartRow tapColumn:self.panStartColumn];
                 } else {
                     [self refreshViewForModel];
-                }                
+                }
             }
+            self.isPanning = NO;
         }
     }
 }
