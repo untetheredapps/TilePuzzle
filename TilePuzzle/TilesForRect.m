@@ -9,6 +9,11 @@
 #import "TilesForRect.h"
 #import "Tile.h"
 
+
+#define TILES_FOR_RECT_INDEX_FOR_ROW 0
+#define TILES_FOR_RECT_INDEX_FOR_COLUMN 1
+
+
 @interface TilesForRect ()
 
 @property (nonatomic, strong) NSMutableDictionary *tilesDictionary;
@@ -16,6 +21,8 @@
 @end
 
 @implementation TilesForRect
+
+#pragma mark - Public methods
 
 - (id)initWithTilesForMaxRows:(NSInteger)maxRows maxColumns:(NSInteger)maxColumns {
     if ((self = [super init])) {
@@ -29,8 +36,6 @@
     
     return self;
 }
-
-#pragma mark - Public methods
 
 - (void)setTile:(Tile *)tile forRow:(NSInteger)row column:(NSInteger)column {
     [self.tilesDictionary setObject:tile forKey:[[self class] keyForRow:row column:column]];
@@ -56,6 +61,7 @@
     NSArray *tilesArray = [self.tilesDictionary allValues];
     NSInteger count = tilesArray.count;
     for (NSInteger i = 0; i < count; i++) {
+        // TODO Confirm arc4random() needs no seed and provides uniform distribution.
         NSInteger randomIndex = arc4random() % count;
         Tile *iTile = [tilesArray objectAtIndex:i];
         Tile *randomIndexTile = [tilesArray objectAtIndex:randomIndex];
@@ -74,9 +80,12 @@
     return [NSString stringWithString:s];
 }
 
+
 #pragma mark - Private methods
 
+// TODO Is NSIndexPath a better choice?
 + (NSArray *)keyForRow:(NSInteger)row column:(NSInteger)column {
+    // [TILES_FOR_RECT_INDEX_FOR_ROW, TILES_FOR_RECT_INDEX_FOR_COLUMN]
     return [NSArray arrayWithObjects:[NSNumber numberWithUnsignedInteger:row], [NSNumber numberWithUnsignedInteger:column], nil];
 }
 
@@ -92,12 +101,12 @@
 - (NSArray *)sortedKeysForTitlesDictionary {
     NSArray *keys = [self.tilesDictionary allKeys];
     NSArray *sortedKeys = [keys sortedArrayUsingComparator:^NSComparisonResult(NSArray *aArray, NSArray *bArray) {
-        NSNumber *aRowNumber = [aArray objectAtIndex:0];
-        NSNumber *bRowNumber = [bArray objectAtIndex:0];
+        NSNumber *aRowNumber = [aArray objectAtIndex:TILES_FOR_RECT_INDEX_FOR_ROW];
+        NSNumber *bRowNumber = [bArray objectAtIndex:TILES_FOR_RECT_INDEX_FOR_ROW];
         NSComparisonResult rowComparisonResult = [aRowNumber compare:bRowNumber];
         if (rowComparisonResult == NSOrderedSame) {
-            NSNumber *aColumnNumber = [aArray objectAtIndex:1];
-            NSNumber *bColumnNumber = [bArray objectAtIndex:1];
+            NSNumber *aColumnNumber = [aArray objectAtIndex:TILES_FOR_RECT_INDEX_FOR_COLUMN];
+            NSNumber *bColumnNumber = [bArray objectAtIndex:TILES_FOR_RECT_INDEX_FOR_COLUMN];
             return [aColumnNumber compare:bColumnNumber];
         } else {
             return rowComparisonResult;

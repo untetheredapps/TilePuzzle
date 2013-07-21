@@ -8,12 +8,18 @@
 
 #import "Tile.h"
 
+
 @interface Tile ()
+
 @property (nonatomic, assign) NSInteger originalRow;
 @property (nonatomic, assign) NSInteger originalColumn;
+
 @end
 
 @implementation Tile
+
+
+#pragma mark - Public methods
 
 - (id)initWithRow:(NSInteger)row column:(NSInteger)column {
     if ((self = [super init])) {

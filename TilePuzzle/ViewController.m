@@ -11,21 +11,24 @@
 #import "TilesForRect.h"
 #import "Tile.h"
 
-#define MAX_ROWS 4
-#define MAX_COLUMNS 4
 
-#define IMAGE_NAME @"globe.jpg"
+#define TP_MAX_ROWS 4
+#define TP_MAX_COLUMNS 4
 
-#define BORDER_THICKNESS 1.0
+#define TP_IMAGE_NAME @"globe.jpg"
 
-#define VIEW_MARGIN 10.0
+#define TP_ANIMATION_DURATION_SECONDS 0.2
 
-#define BORDER_COLOR lightGrayColor
+#define TP_VIEW_MARGIN 10.0
 
-#define EPSILON 1.0
+#define TP_BORDER_THICKNESS 1.0
+#define TP_BORDER_COLOR lightGrayColor
 
-#define TILE_VIEW_ARRAY_INDEX_TILE 0
-#define TILE_VIEW_ARRAY_INDEX_VIEW 1
+#define TP_EPSILON 1.0
+
+#define TP_TILE_VIEW_ARRAY_INDEX_TILE 0
+#define TP_TILE_VIEW_ARRAY_INDEX_VIEW 1
+
 
 @interface ViewController ()
 
@@ -49,41 +52,34 @@
 
 @implementation ViewController
 
+
+#pragma mark - View life cycle methods
+
 - (void)viewDidLoad {
     [super viewDidLoad];
 	// Do any additional setup after loading the view, typically from a nib.
     
     // Set the background to a top-light gray to bottom-dark gray gradient.
     self.gradientLayer = [CAGradientLayer layer];
-    self.gradientLayer.frame = self.view.bounds;
+    [self establishGradientLayerFrame];
     UIColor *topLightGrayColor = [UIColor colorWithRed:125/255.0 green:125/255.0 blue:125/255.0 alpha:1];
     UIColor *bottomDarkGrayColor = [UIColor colorWithRed:33/255.0 green:33/255.0 blue:33/255.0 alpha:1];
     self.gradientLayer.colors = [NSArray arrayWithObjects:(id)topLightGrayColor.CGColor, (id)bottomDarkGrayColor.CGColor, nil];
     [self.view.layer addSublayer:self.gradientLayer];
-    
-    // TODO: Find a better solution that tracks view frame automatically.
-    // Make transitions less noticeable by choosing a color used by the gradient.
-    self.view.backgroundColor = bottomDarkGrayColor;
-}
-
-- (void)willAnimateRotationToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation duration:(NSTimeInterval)duration {
-    self.gradientLayer.frame = self.view.bounds;
 }
 
 - (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+
     // Establish the source image and geometry.
     UIImageView *sourceImageView = [[UIImageView alloc] initWithImage:self.sourceImage];
     sourceImageView.center = CGPointMake(roundf(self.view.bounds.size.width / 2), roundf(self.view.bounds.size.height / 2));
     self.sourceImageViewFrame = sourceImageView.frame;
-    self.tileWidth = sourceImageView.bounds.size.width / MAX_COLUMNS;
-    self.tileHeight = sourceImageView.bounds.size.height / MAX_ROWS;
+    self.tileWidth = sourceImageView.bounds.size.width / TP_MAX_COLUMNS;
+    self.tileHeight = sourceImageView.bounds.size.height / TP_MAX_ROWS;
     
     [self initModelForNewGame];
     [self refreshViewForModel];
-}
-
-- (void)viewDidAppear:(BOOL)animated {
-    self.gradientLayer.frame = self.view.bounds;   
 }
 
 - (void)didReceiveMemoryWarning
@@ -92,24 +88,36 @@
     // Dispose of any resources that can be recreated.
 }
 
+
 #pragma mark - Private methods
+
+- (void)establishGradientLayerFrame {
+    // Extend dimension to avoid need to resize when auto rotating.
+    CGFloat statusBarHeight = [UIApplication sharedApplication].statusBarFrame.size.height;
+
+    CGFloat maxDimension = fmaxf(self.view.bounds.size.width + statusBarHeight, self.view.bounds.size.height + statusBarHeight);
+    CGRect frame = self.view.bounds;
+    frame.size.width = maxDimension;
+    frame.size.height = maxDimension;
+    self.gradientLayer.frame = frame;
+}
 
 // Lazy getter.
 - (UIImage *)sourceImage {
     if (!_sourceImage) {
         // If everything fits in all rotations, we will use the full size image.  Otherwise, we will resize once for the device.
-        _sourceImage = [UIImage imageNamed:IMAGE_NAME];
+        _sourceImage = [UIImage imageNamed:TP_IMAGE_NAME];
         
         CGSize imageSize = _sourceImage.size;
         CGSize viewSize = self.view.bounds.size;
-        CGFloat margin = [UIApplication sharedApplication].statusBarFrame.size.height + VIEW_MARGIN;
+        CGFloat margin = [UIApplication sharedApplication].statusBarFrame.size.height + TP_VIEW_MARGIN;
         
         // Max dimension is the minimum of image dimension and both view dimensions.
-        CGFloat maxWidth = fminf(imageSize.width, viewSize.width - BORDER_THICKNESS * 2.0 - margin);
-        maxWidth = fminf(maxWidth, viewSize.height - BORDER_THICKNESS * 2.0);
+        CGFloat maxWidth = fminf(imageSize.width, viewSize.width - TP_BORDER_THICKNESS * 2.0 - margin);
+        maxWidth = fminf(maxWidth, viewSize.height - TP_BORDER_THICKNESS * 2.0);
         
-        CGFloat maxHeight = fminf(imageSize.width, viewSize.width - BORDER_THICKNESS * 2.0 - margin);
-        maxHeight = fminf(maxHeight, viewSize.height - BORDER_THICKNESS * 2.0);
+        CGFloat maxHeight = fminf(imageSize.width, viewSize.width - TP_BORDER_THICKNESS * 2.0 - margin);
+        maxHeight = fminf(maxHeight, viewSize.height - TP_BORDER_THICKNESS * 2.0);
        
         CGFloat widthRatio = 1.0;
         if (maxWidth < imageSize.width) {
@@ -140,15 +148,15 @@
 
 
 - (void)initModelForNewGame {
-    self.tilesForRect = [[TilesForRect alloc] initWithTilesForMaxRows:MAX_ROWS  maxColumns:MAX_COLUMNS];
-    NSLog(@"After init, tilesForRect:%@", self.tilesForRect);
+    self.tilesForRect = [[TilesForRect alloc] initWithTilesForMaxRows:TP_MAX_ROWS  maxColumns:TP_MAX_COLUMNS];
+//    NSLog(@"After init, tilesForRect:%@", self.tilesForRect);
     
     [self.tilesForRect randomizeTileLocations];
-    NSLog(@"After randomize, tilesForRect:%@", self.tilesForRect);
+//    NSLog(@"After randomize, tilesForRect:%@", self.tilesForRect);
     
     Tile *tile = [self.tilesForRect getRandomTile];
     tile.hidden = YES;
-    NSLog(@"After hiding one, tilesForRect:%@", self.tilesForRect);  
+//    NSLog(@"After hiding one, tilesForRect:%@", self.tilesForRect);  
 }
 
 - (void)refreshViewForModel {
@@ -168,8 +176,8 @@
     [self.view addSubview:self.tilesContainerView];
     
     // Create tiles.
-    for (NSInteger row = 0; row < MAX_ROWS; row ++) {
-        for (NSInteger column = 0; column < MAX_COLUMNS; column++) {
+    for (NSInteger row = 0; row < TP_MAX_ROWS; row ++) {
+        for (NSInteger column = 0; column < TP_MAX_COLUMNS; column++) {
             Tile *tile = [self.tilesForRect getTileForRow:row column:column];
             if (!tile.hidden) {
                 // Tile frame corresponds to location on display.
@@ -181,7 +189,7 @@
                 borderFrame.origin.x = roundf(column * self.tileWidth);
                 borderFrame.origin.y = roundf(row * self.tileHeight);
                 UIView *borderView = [[UIView alloc] initWithFrame:borderFrame];
-                borderView.backgroundColor = [UIColor BORDER_COLOR];
+                borderView.backgroundColor = [UIColor TP_BORDER_COLOR];
 
                 // Configure taps.
                 UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapFrom:)];
@@ -197,25 +205,25 @@
                 // Image within border.
                 UIImageView *tileImageView = [[UIImageView alloc] initWithImage:self.sourceImage];                
                 CGRect imageFrame;
-                imageFrame.size.width = roundf(self.tileWidth - BORDER_THICKNESS * 2.0);
-                imageFrame.size.height = roundf(self.tileHeight - BORDER_THICKNESS * 2.0);
-                imageFrame.origin.x = BORDER_THICKNESS;
-                imageFrame.origin.y = BORDER_THICKNESS;
+                imageFrame.size.width = roundf(self.tileWidth - TP_BORDER_THICKNESS * 2.0);
+                imageFrame.size.height = roundf(self.tileHeight - TP_BORDER_THICKNESS * 2.0);
+                imageFrame.origin.x = TP_BORDER_THICKNESS;
+                imageFrame.origin.y = TP_BORDER_THICKNESS;
                 tileImageView.frame = imageFrame;
                 
                 // Tile content corresponds to row and column of tiles original location.
                 CGRect cropRect;
-                cropRect.size.width = roundf(self.tileWidth - BORDER_THICKNESS * 2.0);
-                cropRect.size.height = roundf(self.tileHeight - BORDER_THICKNESS * 2.0);
-                cropRect.origin.x = roundf(tile.originalColumn * self.tileWidth + BORDER_THICKNESS);
-                cropRect.origin.y = roundf(tile.originalRow * self.tileHeight + BORDER_THICKNESS);
+                cropRect.size.width = roundf(self.tileWidth - TP_BORDER_THICKNESS * 2.0);
+                cropRect.size.height = roundf(self.tileHeight - TP_BORDER_THICKNESS * 2.0);
+                cropRect.origin.x = roundf(tile.originalColumn * self.tileWidth + TP_BORDER_THICKNESS);
+                cropRect.origin.y = roundf(tile.originalRow * self.tileHeight + TP_BORDER_THICKNESS);
                 CGImageRef imageRef = CGImageCreateWithImageInRect([self.sourceImage CGImage], cropRect);
                 [tileImageView setImage:[UIImage imageWithCGImage:imageRef]];
                 CGImageRelease(imageRef);
                 
                 [borderView addSubview:tileImageView];
             } else {
-                NSLog(@"row:%d column:%d hidden tile:%@", row, column, tile);
+//                NSLog(@"row:%d column:%d hidden tile:%@", row, column, tile);
                 self.hiddenTile = tile;
             }
         }
@@ -223,8 +231,7 @@
 }
 
 - (void)convertFromTileView:(UIView *)tileView toRow:(NSInteger *)row column:(NSInteger *)column {
-
-    NSLog(@"tileView:%@", tileView);
+//    NSLog(@"tileView:%@", tileView);
     
     // Deduce row and column from mid-point of view; a little cheezy, but should be safe.
     *row = (tileView.frame.origin.y + tileView.frame.size.height / 2) / self.tileHeight;
@@ -232,7 +239,7 @@
 }
 
 - (void)finishSlidingTilesFromStartRow:(NSInteger)startRow startColumn:(NSInteger)startColumn withCompletion:(void (^)(void))completionBlock {
-    NSLog(@"startRow:%d startColumn:%d", startRow, startColumn);
+//    NSLog(@"startRow:%d startColumn:%d", startRow, startColumn);
     // Update model.
     if (startRow == self.hiddenTile.currentRow) {
         if (startColumn < self.hiddenTile.currentColumn) {
@@ -254,14 +261,14 @@
 }
 
 - (void)animateSlidingTilesWithCompletion:(void (^)(void))completionBlock {
-    [UIView animateWithDuration:0.2
+    [UIView animateWithDuration:TP_ANIMATION_DURATION_SECONDS
                           delay:0.0
                         options:UIViewAnimationOptionCurveEaseInOut
                      animations:^{
                          // Update sliding views to match the new model.
                          for (NSArray *tileViewArray in self.tilesViewsToSlideArray) {
-                             Tile *tile = [tileViewArray objectAtIndex:TILE_VIEW_ARRAY_INDEX_TILE];
-                             UIView *subview = [tileViewArray objectAtIndex:TILE_VIEW_ARRAY_INDEX_VIEW];
+                             Tile *tile = [tileViewArray objectAtIndex:TP_TILE_VIEW_ARRAY_INDEX_TILE];
+                             UIView *subview = [tileViewArray objectAtIndex:TP_TILE_VIEW_ARRAY_INDEX_VIEW];
                              
                              CGRect newBorderFrame = subview.frame;
                              newBorderFrame.origin.x = roundf(tile.currentColumn * self.tileWidth);
@@ -270,7 +277,7 @@
                          }
                      }
                      completion:^(BOOL finished){
-                         NSLog(@"Done animating.");
+//                         NSLog(@"Done animating.");
                          self.tilesViewsToSlideArray = nil;
                          if (completionBlock) {
                              completionBlock();
@@ -280,10 +287,10 @@
 
 
 - (void)handleTapFrom:(UITapGestureRecognizer *)tapGestureRecognizer {
-    NSLog(@"tapGestureRecognizer:%@", tapGestureRecognizer);
+//    NSLog(@"tapGestureRecognizer:%@", tapGestureRecognizer);
     
     if (self.tappedView || self.pannedView) {
-        NSLog(@"Tap already in progress.");
+//        NSLog(@"Tap already in progress.");
     } else {
         // Establish and save start location.
         NSInteger startRow;
@@ -294,7 +301,7 @@
             self.tappedView = tapGestureRecognizer.view;
             [self establishSlideStartStopTilesViewsFromStartRow:startRow startColumn:startColumn];
             for (NSArray *tileViewArray in self.tilesViewsToSlideArray) {
-                UIView *subview = [tileViewArray objectAtIndex:TILE_VIEW_ARRAY_INDEX_VIEW];
+                UIView *subview = [tileViewArray objectAtIndex:TP_TILE_VIEW_ARRAY_INDEX_VIEW];
                 [tapGestureRecognizer.view.superview bringSubviewToFront:subview];
             }
             [self finishSlidingTilesFromStartRow:startRow startColumn:startColumn withCompletion:^{
@@ -306,13 +313,13 @@
 
 
 - (void)handlePanFrom:(UIPanGestureRecognizer *)panGestureRecognizer {
-    NSLog(@"panGestureRecognizer:%@", panGestureRecognizer);
+//    NSLog(@"panGestureRecognizer:%@", panGestureRecognizer);
     
     if (self.tappedView) {
-        NSLog(@"Tap already in progress.");
+//        NSLog(@"Tap already in progress.");
     } else {
         if (self.pannedView) {
-            NSLog(@"Pan already in progress.");
+//            NSLog(@"Pan already in progress.");
         } else {
             if (panGestureRecognizer.state == UIGestureRecognizerStateBegan) {
                 // Establish and save start location.
@@ -324,7 +331,7 @@
                     self.pannedView = panGestureRecognizer.view;
                     [self establishSlideStartStopTilesViewsFromStartRow:startRow startColumn:startColumn];
                     for (NSArray *tileViewArray in self.tilesViewsToSlideArray) {
-                        UIView *subview = [tileViewArray objectAtIndex:TILE_VIEW_ARRAY_INDEX_VIEW];
+                        UIView *subview = [tileViewArray objectAtIndex:TP_TILE_VIEW_ARRAY_INDEX_VIEW];
                         [panGestureRecognizer.view.superview bringSubviewToFront:subview];
                     }
                 }
@@ -352,7 +359,7 @@
             CGFloat distanceToMoveY = newCenter.y - oldCenter.y;
             
             for (NSArray *tileViewArray in self.tilesViewsToSlideArray) {
-                UIView *subview = [tileViewArray objectAtIndex:TILE_VIEW_ARRAY_INDEX_VIEW];
+                UIView *subview = [tileViewArray objectAtIndex:TP_TILE_VIEW_ARRAY_INDEX_VIEW];
                 CGPoint newSubviewCenter = subview.center;
                 newSubviewCenter.x += distanceToMoveX;
                 newSubviewCenter.y += distanceToMoveY;
@@ -421,7 +428,7 @@
 #pragma mark -
 
 - (void)determineFromStartRow:(NSInteger)startRow startColumn:(NSInteger)startColumn toStopRow:(NSInteger *)stopRow stopColumn:(NSInteger *)stopColumn {
-    NSLog(@"startRow:%d startColumn:%d", startRow, startColumn);
+//    NSLog(@"startRow:%d startColumn:%d", startRow, startColumn);
     
     *stopRow = startRow;
     *stopColumn = startColumn;
@@ -439,7 +446,7 @@
         }
     }
 
-    NSLog(@"*stopRow:%d *stopColumn:%d", *stopRow, *stopColumn);
+//    NSLog(@"*stopRow:%d *stopColumn:%d", *stopRow, *stopColumn);
 }
 
 
@@ -488,7 +495,7 @@
     for (UIView *view in self.tilesContainerView.subviews) {
         CGFloat distanceX = fabsf(center.x - view.center.x);
         CGFloat distanceY = fabsf(center.y - view.center.y);
-        if (distanceX < EPSILON && distanceY < EPSILON) {
+        if (distanceX < TP_EPSILON && distanceY < TP_EPSILON) {
             tileView = view;
             break;
         }
@@ -501,7 +508,7 @@
 #pragma mark -
 
 - (NSArray *)tilesViewsToSlideArrayInRow:(NSInteger)row aColumn:(NSInteger)aColumn {
-    NSLog(@"aColumn:%d", aColumn);
+//    NSLog(@"aColumn:%d", aColumn);
     NSMutableArray *mutableArray = [NSMutableArray array];
     
     NSInteger startColumn = MIN(aColumn, self.hiddenTile.currentColumn);
@@ -513,6 +520,7 @@
             // There was a tile at the location; find associated view.
             UIView *tileView = [self tileViewForRow:row column:c];
             if (tileView) {
+                // [TP_TILE_VIEW_ARRAY_INDEX_TILE, TP_TILE_VIEW_ARRAY_INDEX_VIEW]
                 [mutableArray addObject:[NSArray arrayWithObjects:tile, tileView, nil]];
             } else {
                 NSAssert(NO, @"Yikes!");
@@ -524,7 +532,7 @@
 }
 
 - (NSArray *)tilesViewsToSlideArrayInColumn:(NSInteger)column aRow:(NSInteger)aRow {
-    NSLog(@"aRow:%d", aRow);
+//    NSLog(@"aRow:%d", aRow);
     NSMutableArray *mutableArray = [NSMutableArray array];
     
     NSInteger startRow = MIN(aRow, self.hiddenTile.currentRow);
