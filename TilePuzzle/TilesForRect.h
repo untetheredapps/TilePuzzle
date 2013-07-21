@@ -10,10 +10,10 @@
 
 @interface TilesForRect : NSObject
 
-- (id)initWithTilesForMaxRows:(NSUInteger)maxRows maxColumns:(NSUInteger)maxColumns;
+- (id)initWithTilesForMaxRows:(NSInteger)maxRows maxColumns:(NSInteger)maxColumns;
 
-- (void)setTile:(Tile *)tile forRow:(NSUInteger)row column:(NSUInteger)column;
-- (Tile *)getTileForRow:(NSUInteger)row column:(NSUInteger)column;
+- (void)setTile:(Tile *)tile forRow:(NSInteger)row column:(NSInteger)column;
+- (Tile *)getTileForRow:(NSInteger)row column:(NSInteger)column;
 - (Tile *)getRandomTile;
 - (void)randomizeTileLocations;
 

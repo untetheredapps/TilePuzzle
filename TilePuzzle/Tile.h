@@ -10,12 +10,12 @@
 
 @interface Tile : NSObject
 
-@property (nonatomic, assign, readonly) NSUInteger originalRow;
-@property (nonatomic, assign, readonly) NSUInteger originalColumn;
-@property (nonatomic, assign) NSUInteger currentRow;
-@property (nonatomic, assign) NSUInteger currentColumn;
+@property (nonatomic, assign, readonly) NSInteger originalRow;
+@property (nonatomic, assign, readonly) NSInteger originalColumn;
+@property (nonatomic, assign) NSInteger currentRow;
+@property (nonatomic, assign) NSInteger currentColumn;
 @property (nonatomic, assign) BOOL hidden;
 
-- (id)initWithRow:(NSUInteger)row column:(NSUInteger)column;
+- (id)initWithRow:(NSInteger)row column:(NSInteger)column;
 
 @end

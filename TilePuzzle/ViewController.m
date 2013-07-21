@@ -11,8 +11,8 @@
 #import "TilesForRect.h"
 #import "Tile.h"
 
-#define MAX_ROWS 3
-#define MAX_COLUMNS 3
+#define MAX_ROWS 4
+#define MAX_COLUMNS 4
 
 #define BORDER_THICKNESS 5.0
 
@@ -91,8 +91,8 @@
     [self.view addSubview:self.tilesContainerView];
     
     // Create tiles.
-    for (NSUInteger row = 0; row < MAX_ROWS; row ++) {
-        for (NSUInteger column = 0; column < MAX_COLUMNS; column++) {
+    for (NSInteger row = 0; row < MAX_ROWS; row ++) {
+        for (NSInteger column = 0; column < MAX_COLUMNS; column++) {
             Tile *tile = [self.tilesForRect getTileForRow:row column:column];
             if (!tile.hidden) {
                 // Tile frame corresponds to location on display.
@@ -141,13 +141,52 @@
     NSLog(@"recognizer:%@", recognizer);
     
     // Deduce row and column from mid-point of view; a little cheezy, but should be safe.
-    NSUInteger row = (recognizer.view.frame.origin.y + recognizer.view.frame.size.height / 2) / self.tileHeight;
-    NSUInteger column = (recognizer.view.frame.origin.x + recognizer.view.frame.size.width / 2) / self.tileWidth;
+    NSInteger tapRow = (recognizer.view.frame.origin.y + recognizer.view.frame.size.height / 2) / self.tileHeight;
+    NSInteger tapColumn = (recognizer.view.frame.origin.x + recognizer.view.frame.size.width / 2) / self.tileWidth;
     
-    if (row == self.hiddenTile.currentRow || column == self.hiddenTile.currentColumn) {
-        [recognizer.view removeFromSuperview];
+    BOOL tilesMoved = NO;
+    if (tapRow == self.hiddenTile.currentRow) {
+        if (tapColumn < self.hiddenTile.currentColumn) {
+            // Slide everything right.
+            for (NSInteger c = self.hiddenTile.currentColumn - 1; c >= tapColumn; c--) {
+                Tile *tile = [self.tilesForRect getTileForRow:tapRow column:c];
+                [self.tilesForRect setTile:tile forRow:tapRow column:(c + 1)];
+            }
+        } else {
+            // Slide everything left.
+            for (NSInteger c = self.hiddenTile.currentColumn + 1; c <= tapColumn; c++) {
+                Tile *tile = [self.tilesForRect getTileForRow:tapRow column:c];
+                [self.tilesForRect setTile:tile forRow:tapRow column:(c - 1)];
+            }
+        }
+        tilesMoved = YES;
+    } else if (tapColumn == self.hiddenTile.currentColumn) {
+        if (tapRow < self.hiddenTile.currentRow) {
+            // Slide everything down.
+            for (NSInteger r = self.hiddenTile.currentRow - 1; r >= tapRow; r--) {
+                Tile *tile = [self.tilesForRect getTileForRow:r column:tapColumn];
+                [self.tilesForRect setTile:tile forRow:(r + 1) column:tapColumn];
+            }
+        } else {
+            // Slide everything up.
+            for (NSInteger r = self.hiddenTile.currentRow + 1; r <= tapRow; r++) {
+                Tile *tile = [self.tilesForRect getTileForRow:r column:tapColumn];
+                [self.tilesForRect setTile:tile forRow:(r - 1) column:tapColumn];
+            }
+        }
+        tilesMoved = YES;
+    }
+
+    if (tilesMoved) {
+        // Hidden tile replaces the one just tapped.
+        [self.tilesForRect setTile:self.hiddenTile forRow:tapRow column:tapColumn];
     }
     
+    [self refreshViewForModel];
+
 }
+
+
+
 
 @end

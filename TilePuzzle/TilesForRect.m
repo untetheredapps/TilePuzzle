@@ -17,10 +17,10 @@
 
 @implementation TilesForRect
 
-- (id)initWithTilesForMaxRows:(NSUInteger)maxRows maxColumns:(NSUInteger)maxColumns {
+- (id)initWithTilesForMaxRows:(NSInteger)maxRows maxColumns:(NSInteger)maxColumns {
     if ((self = [super init])) {
-        for (NSUInteger row = 0; row < maxRows; row++) {
-            for (NSUInteger column = 0; column < maxColumns; column++) {
+        for (NSInteger row = 0; row < maxRows; row++) {
+            for (NSInteger column = 0; column < maxColumns; column++) {
                 Tile *tile = [[Tile alloc] initWithRow:row column:column];
                 [self setTile:tile forRow:row column:column];
             }
@@ -32,29 +32,29 @@
 
 #pragma mark - Public methods
 
-- (void)setTile:(Tile *)tile forRow:(NSUInteger)row column:(NSUInteger)column {
+- (void)setTile:(Tile *)tile forRow:(NSInteger)row column:(NSInteger)column {
     [self.tilesDictionary setObject:tile forKey:[[self class] keyForRow:row column:column]];
     tile.currentRow = row;
     tile.currentColumn = column;
 }
 
-- (Tile *)getTileForRow:(NSUInteger)row column:(NSUInteger)column {
+- (Tile *)getTileForRow:(NSInteger)row column:(NSInteger)column {
     return [self.tilesDictionary objectForKey:[[self class] keyForRow:row column:column]];
 }
 
 - (Tile *)getRandomTile {
     NSArray *tilesArray = [self.tilesDictionary allValues];
-    NSUInteger count = tilesArray.count;
-    NSUInteger randomIndex = arc4random() % count;
+    NSInteger count = tilesArray.count;
+    NSInteger randomIndex = arc4random() % count;
     Tile *randomIndexTile = [tilesArray objectAtIndex:randomIndex];
     return randomIndexTile;
 }
 
 - (void)randomizeTileLocations {
     NSArray *tilesArray = [self.tilesDictionary allValues];
-    NSUInteger count = tilesArray.count;
-    for (NSUInteger i = 0; i < count; i++) {
-        NSUInteger randomIndex = arc4random() % count;
+    NSInteger count = tilesArray.count;
+    for (NSInteger i = 0; i < count; i++) {
+        NSInteger randomIndex = arc4random() % count;
         Tile *iTile = [tilesArray objectAtIndex:i];
         Tile *randomIndexTile = [tilesArray objectAtIndex:randomIndex];
         [self swapCurrentLocationOfTile:iTile withOtherTile:randomIndexTile];
@@ -74,14 +74,14 @@
 
 #pragma mark - Private methods
 
-+ (NSArray *)keyForRow:(NSUInteger)row column:(NSUInteger)column {
++ (NSArray *)keyForRow:(NSInteger)row column:(NSInteger)column {
     return [NSArray arrayWithObjects:[NSNumber numberWithUnsignedInteger:row], [NSNumber numberWithUnsignedInteger:column], nil];
 }
 
 - (void)swapCurrentLocationOfTile:(Tile *)aTile withOtherTile:(Tile *)otherTile {
     if (aTile != otherTile) {
-        NSUInteger swapSaveRow = aTile.currentRow;
-        NSUInteger swapSaveColumn = aTile.currentColumn;
+        NSInteger swapSaveRow = aTile.currentRow;
+        NSInteger swapSaveColumn = aTile.currentColumn;
         [self setTile:aTile forRow:otherTile.currentRow column:otherTile.currentColumn];
         [self setTile:otherTile forRow:swapSaveRow column:swapSaveColumn];
     }

@@ -9,13 +9,13 @@
 #import "Tile.h"
 
 @interface Tile ()
-@property (nonatomic, assign) NSUInteger originalRow;
-@property (nonatomic, assign) NSUInteger originalColumn;
+@property (nonatomic, assign) NSInteger originalRow;
+@property (nonatomic, assign) NSInteger originalColumn;
 @end
 
 @implementation Tile
 
-- (id)initWithRow:(NSUInteger)row column:(NSUInteger)column {
+- (id)initWithRow:(NSInteger)row column:(NSInteger)column {
     if ((self = [super init])) {
         self.currentRow = self.originalRow = row;
         self.currentColumn = self.originalColumn = column;
