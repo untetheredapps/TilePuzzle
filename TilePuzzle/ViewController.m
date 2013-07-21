@@ -118,12 +118,6 @@
                 UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapFrom:)];
                 [borderView addGestureRecognizer:tapGestureRecognizer];
 
-                // Configure swipes.
-                [self addSwipeGestureRecognizerDirection:UISwipeGestureRecognizerDirectionRight view:borderView];
-                [self addSwipeGestureRecognizerDirection:UISwipeGestureRecognizerDirectionLeft view:borderView];
-                [self addSwipeGestureRecognizerDirection:UISwipeGestureRecognizerDirectionDown view:borderView];
-                [self addSwipeGestureRecognizerDirection:UISwipeGestureRecognizerDirectionUp view:borderView];
-
                 // Configure dragging.
                 UIPanGestureRecognizer *panGestureRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePanFrom:)];
                 panGestureRecognizer.maximumNumberOfTouches = 1;
@@ -159,12 +153,6 @@
     }
 }
 
-- (void)addSwipeGestureRecognizerDirection:(UISwipeGestureRecognizerDirection)direction view:(UIView *)view {
-    UISwipeGestureRecognizer *swipeGestureRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(handleSwipeFrom:)];
-    swipeGestureRecognizer.direction =  direction;
-    [view addGestureRecognizer:swipeGestureRecognizer];
-}
-
 - (void)convertFromTileView:(UIView *)tileView toRow:(NSInteger *)row column:(NSInteger *)column {
     NSLog(@"tileView:%@", tileView);
     
@@ -198,31 +186,6 @@
         [self.tilesForRect setTile:self.hiddenTile forRow:tapRow column:tapColumn];
         [self refreshViewForModel];
     }    
-}
-
-- (void)handleGestureForSwipeDirection:(UISwipeGestureRecognizerDirection)direction startRow:(NSInteger)startRow startColumn:(NSInteger)startColumn {
-    NSLog(@"direction:%d startRow:%d startColumn:%d", direction, startRow, startColumn);
-
-    // If swipe makes sense ...
-    BOOL moveTiles = NO;
-    if (startRow == self.hiddenTile.currentRow) {
-        if (startColumn < self.hiddenTile.currentColumn) {
-            moveTiles = (direction == UISwipeGestureRecognizerDirectionRight);
-        } else {
-            moveTiles = (direction == UISwipeGestureRecognizerDirectionLeft);
-        }
-    } else if (startColumn == self.hiddenTile.currentColumn) {
-        if (startRow < self.hiddenTile.currentRow) {
-            moveTiles = (direction == UISwipeGestureRecognizerDirectionDown);
-        } else {
-            moveTiles = (direction == UISwipeGestureRecognizerDirectionUp);
-        }
-    }
-    
-    // ... handle it like a tap.
-    if (moveTiles) {
-        [self handleGestureForTapRow:startRow tapColumn:startColumn];
-    }
 }
 
 - (void)determineFromStartRow:(NSInteger)startRow startColumn:(NSInteger)startColumn toStopRow:(NSInteger *)stopRow stopColumn:(NSInteger *)stopColumn {
@@ -293,14 +256,6 @@
     NSInteger column;
     [self convertFromTileView:tapGestureRecognizer.view toRow:&row column:&column];
     [self handleGestureForTapRow:row tapColumn:column];
-}
-
-- (void)handleSwipeFrom:(UISwipeGestureRecognizer *)swipeGestureRecognizer {
-    NSLog(@"swipeGestureRecognizer:%@", swipeGestureRecognizer);
-    NSInteger row;
-    NSInteger column;
-    [self convertFromTileView:swipeGestureRecognizer.view toRow:&row column:&column];
-    [self handleGestureForSwipeDirection:swipeGestureRecognizer.direction startRow:row startColumn:column];
 }
 
 - (UIView *)tileViewForRow:(NSInteger)row column:(NSInteger)column {
