@@ -102,6 +102,10 @@
                 borderFrame.origin.y = roundf(column * tileHeight);
                 UIView *borderView = [[UIView alloc] initWithFrame:borderFrame];
                 borderView.backgroundColor = [UIColor BORDER_COLOR];
+                
+                UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapFrom:)];
+                [borderView addGestureRecognizer:tapGestureRecognizer];
+                
                 [self.tilesContainerView addSubview:borderView];
                 
                 UIImageView *tileImageView = [[UIImageView alloc] initWithImage:self.sourceImage];
@@ -128,6 +132,13 @@
             }
         }
     }
+}
+
+- (void)handleTapFrom:(UITapGestureRecognizer *)recognizer {
+    NSLog(@"recognizer:%@", recognizer);
+    
+    // Remove view (for now).
+    [recognizer.view removeFromSuperview];
 }
 
 @end
