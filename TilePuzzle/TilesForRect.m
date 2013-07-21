@@ -50,6 +50,8 @@
     return randomIndexTile;
 }
 
+// TODO: Replace with an approach that guarantees solvability.
+// "A single swap of the tiles 14 and 15 is an odd permutation and hence not possible."  http://www.jaapsch.net/puzzles/fifteen.htm
 - (void)randomizeTileLocations {
     NSArray *tilesArray = [self.tilesDictionary allValues];
     NSInteger count = tilesArray.count;
