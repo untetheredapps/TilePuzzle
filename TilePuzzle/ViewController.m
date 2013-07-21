@@ -36,7 +36,8 @@
 @property (nonatomic, strong) Tile *hiddenTile;
 @property (nonatomic, assign) CGFloat tileWidth;
 @property (nonatomic, assign) CGFloat tileHeight;
-@property (nonatomic, assign) BOOL isPanning;
+@property (nonatomic, strong) UIView *tappedView;
+@property (nonatomic, strong) UIView *pannedView;
 @property (nonatomic, assign) NSInteger slideStartRow;
 @property (nonatomic, assign) NSInteger slideStartColumn;
 @property (nonatomic, assign) NSInteger slideStopRow;
@@ -222,6 +223,7 @@
 }
 
 - (void)convertFromTileView:(UIView *)tileView toRow:(NSInteger *)row column:(NSInteger *)column {
+
     NSLog(@"tileView:%@", tileView);
     
     // Deduce row and column from mid-point of view; a little cheezy, but should be safe.
@@ -229,7 +231,7 @@
     *column = (tileView.frame.origin.x + tileView.frame.size.width / 2) / self.tileWidth;
 }
 
-- (void)finishSlidingTilesFromStartRow:(NSInteger)startRow startColumn:(NSInteger)startColumn {
+- (void)finishSlidingTilesFromStartRow:(NSInteger)startRow startColumn:(NSInteger)startColumn withCompletion:(void (^)(void))completionBlock {
     NSLog(@"startRow:%d startColumn:%d", startRow, startColumn);
     // Update model.
     if (startRow == self.hiddenTile.currentRow) {
@@ -248,11 +250,11 @@
     // Hidden tile replaces the one just tapped.
     [self.tilesForRect setTile:self.hiddenTile forRow:startRow column:startColumn];
     
-    [self animateSlidingTiles];
+    [self animateSlidingTilesWithCompletion:completionBlock];
 }
 
-- (void)animateSlidingTiles {
-    [UIView animateWithDuration:0.3
+- (void)animateSlidingTilesWithCompletion:(void (^)(void))completionBlock {
+    [UIView animateWithDuration:0.2
                           delay:0.0
                         options:UIViewAnimationOptionCurveEaseInOut
                      animations:^{
@@ -270,6 +272,9 @@
                      completion:^(BOOL finished){
                          NSLog(@"Done animating.");
                          self.tilesViewsToSlideArray = nil;
+                         if (completionBlock) {
+                             completionBlock();
+                         }
                      }];
 }
 
@@ -277,18 +282,25 @@
 - (void)handleTapFrom:(UITapGestureRecognizer *)tapGestureRecognizer {
     NSLog(@"tapGestureRecognizer:%@", tapGestureRecognizer);
     
-    // Establish and save start location.
-    NSInteger startRow;
-    NSInteger startColumn;
-    [self convertFromTileView:tapGestureRecognizer.view toRow:&startRow column:&startColumn];
-    
-    if (startRow == self.hiddenTile.currentRow || startColumn == self.hiddenTile.currentColumn) {
-        [self establishSlideStartStopTilesViewsFromStartRow:startRow startColumn:startColumn];
-        for (NSArray *tileViewArray in self.tilesViewsToSlideArray) {
-            UIView *subview = [tileViewArray objectAtIndex:TILE_VIEW_ARRAY_INDEX_VIEW];
-            [tapGestureRecognizer.view.superview bringSubviewToFront:subview];
+    if (self.tappedView || self.pannedView) {
+        NSLog(@"Tap already in progress.");
+    } else {
+        // Establish and save start location.
+        NSInteger startRow;
+        NSInteger startColumn;
+        [self convertFromTileView:tapGestureRecognizer.view toRow:&startRow column:&startColumn];
+        
+        if (startRow == self.hiddenTile.currentRow || startColumn == self.hiddenTile.currentColumn) {
+            self.tappedView = tapGestureRecognizer.view;
+            [self establishSlideStartStopTilesViewsFromStartRow:startRow startColumn:startColumn];
+            for (NSArray *tileViewArray in self.tilesViewsToSlideArray) {
+                UIView *subview = [tileViewArray objectAtIndex:TILE_VIEW_ARRAY_INDEX_VIEW];
+                [tapGestureRecognizer.view.superview bringSubviewToFront:subview];
+            }
+            [self finishSlidingTilesFromStartRow:startRow startColumn:startColumn withCompletion:^{
+                self.tappedView = nil;
+            }];
         }
-        [self finishSlidingTilesFromStartRow:startRow startColumn:startColumn];
     }
 }
 
@@ -296,75 +308,87 @@
 - (void)handlePanFrom:(UIPanGestureRecognizer *)panGestureRecognizer {
     NSLog(@"panGestureRecognizer:%@", panGestureRecognizer);
     
-    if (panGestureRecognizer.state == UIGestureRecognizerStateBegan) {
-        // Establish and save start location.
-        NSInteger startRow;
-        NSInteger startColumn;
-        [self convertFromTileView:panGestureRecognizer.view toRow:&startRow column:&startColumn];
+    if (self.tappedView) {
+        NSLog(@"Tap already in progress.");
+    } else {
+        if (self.pannedView) {
+            NSLog(@"Pan already in progress.");
+        } else {
+            if (panGestureRecognizer.state == UIGestureRecognizerStateBegan) {
+                // Establish and save start location.
+                NSInteger startRow;
+                NSInteger startColumn;
+                [self convertFromTileView:panGestureRecognizer.view toRow:&startRow column:&startColumn];
+                
+                if (startRow == self.hiddenTile.currentRow || startColumn == self.hiddenTile.currentColumn) {
+                    self.pannedView = panGestureRecognizer.view;
+                    [self establishSlideStartStopTilesViewsFromStartRow:startRow startColumn:startColumn];
+                    for (NSArray *tileViewArray in self.tilesViewsToSlideArray) {
+                        UIView *subview = [tileViewArray objectAtIndex:TILE_VIEW_ARRAY_INDEX_VIEW];
+                        [panGestureRecognizer.view.superview bringSubviewToFront:subview];
+                    }
+                }
+            }
+        }
         
-        self.isPanning = (startRow == self.hiddenTile.currentRow || startColumn == self.hiddenTile.currentColumn);
-        if (self.isPanning) {
-            [self establishSlideStartStopTilesViewsFromStartRow:startRow startColumn:startColumn];
+        if (self.pannedView && self.pannedView == panGestureRecognizer.view) {
+            // Find boundary where we allow movement.
+            CGPoint oldCenter = panGestureRecognizer.view.center;
+            CGPoint newCenter = [panGestureRecognizer locationInView:panGestureRecognizer.view.superview];
+            CGPoint startCenter = [self centerOfViewFromRow:self.slideStartRow column:self.slideStartColumn];
+            CGPoint stopCenter = [self centerOfViewFromRow:self.slideStopRow column:self.slideStopColumn];
+            
+            // Bound view center to rectangle (actually a vertical or horizontal line) bounded by startCenter and stopCenter.
+            CGFloat minX = fminf(startCenter.x, stopCenter.x);
+            CGFloat maxX = fmaxf(startCenter.x, stopCenter.x);
+            CGFloat minY = fminf(startCenter.y, stopCenter.y);
+            CGFloat maxY = fmaxf(startCenter.y, stopCenter.y);
+            newCenter.x = fmaxf(newCenter.x, minX);
+            newCenter.x = fminf(newCenter.x, maxX);
+            newCenter.y = fmaxf(newCenter.y, minY);
+            newCenter.y = fminf(newCenter.y, maxY);
+            
+            CGFloat distanceToMoveX = newCenter.x - oldCenter.x;
+            CGFloat distanceToMoveY = newCenter.y - oldCenter.y;
+            
             for (NSArray *tileViewArray in self.tilesViewsToSlideArray) {
                 UIView *subview = [tileViewArray objectAtIndex:TILE_VIEW_ARRAY_INDEX_VIEW];
-                [panGestureRecognizer.view.superview bringSubviewToFront:subview];
+                CGPoint newSubviewCenter = subview.center;
+                newSubviewCenter.x += distanceToMoveX;
+                newSubviewCenter.y += distanceToMoveY;
+                subview.center = newSubviewCenter;
             }
-        }
-    }
-    
-    if (self.isPanning) {
-        // Every time.
-        
-        // Find boundary where we allow movement.
-        CGPoint oldCenter = panGestureRecognizer.view.center;
-        CGPoint newCenter = [panGestureRecognizer locationInView:panGestureRecognizer.view.superview];
-        CGPoint startCenter = [self centerOfViewFromRow:self.slideStartRow column:self.slideStartColumn];
-        CGPoint stopCenter = [self centerOfViewFromRow:self.slideStopRow column:self.slideStopColumn];
-        
-        // Bound view center to rectangle (actually a vertical or horizontal line) bounded by startCenter and stopCenter.
-        CGFloat minX = fminf(startCenter.x, stopCenter.x);
-        CGFloat maxX = fmaxf(startCenter.x, stopCenter.x);
-        CGFloat minY = fminf(startCenter.y, stopCenter.y);
-        CGFloat maxY = fmaxf(startCenter.y, stopCenter.y);
-        newCenter.x = fmaxf(newCenter.x, minX);
-        newCenter.x = fminf(newCenter.x, maxX);
-        newCenter.y = fmaxf(newCenter.y, minY);
-        newCenter.y = fminf(newCenter.y, maxY);
-        
-        CGFloat distanceToMoveX = newCenter.x - oldCenter.x;
-        CGFloat distanceToMoveY = newCenter.y - oldCenter.y;
-        
-        for (NSArray *tileViewArray in self.tilesViewsToSlideArray) {
-            UIView *subview = [tileViewArray objectAtIndex:TILE_VIEW_ARRAY_INDEX_VIEW];
-            CGPoint newSubviewCenter = subview.center;
-            newSubviewCenter.x += distanceToMoveX;
-            newSubviewCenter.y += distanceToMoveY;
-            subview.center = newSubviewCenter;
-        }
-        
-        // TODO: Confirm whether we need to handle UIGestureRecognizerStateCancelled and UIGestureRecognizerStateFailed.
-        if (panGestureRecognizer.state == UIGestureRecognizerStateEnded) {
-            CGFloat distanceStartStopX = fabsf(startCenter.x - stopCenter.x);
-            CGFloat distanceStartStopY = fabsf(startCenter.y - stopCenter.y);
             
-            if (distanceStartStopX > distanceStartStopY) {
-                // Horizontal pan.
-                CGFloat distanceFromStartX = fabsf(startCenter.x - newCenter.x);
-                if (distanceFromStartX > distanceStartStopX / 2.0) {
-                    [self finishSlidingTilesFromStartRow:self.slideStartRow startColumn:self.slideStartColumn];
+            // TODO: Confirm whether we need to handle UIGestureRecognizerStateCancelled and UIGestureRecognizerStateFailed.
+            if (panGestureRecognizer.state == UIGestureRecognizerStateEnded) {
+                CGFloat distanceStartStopX = fabsf(startCenter.x - stopCenter.x);
+                CGFloat distanceStartStopY = fabsf(startCenter.y - stopCenter.y);
+                
+                BOOL isMovingToNewLocation = NO;
+                if (distanceStartStopX > distanceStartStopY) {
+                    // Horizontal pan.
+                    CGFloat distanceFromStartX = fabsf(startCenter.x - newCenter.x);
+                    if (distanceFromStartX > distanceStartStopX / 2.0) {
+                        isMovingToNewLocation = YES;
+                    }
                 } else {
-                    [self animateSlidingTiles];
+                    // Vertical pan.
+                    CGFloat distanceFromStartY = fabsf(startCenter.y - newCenter.y);
+                    if (distanceFromStartY > distanceStartStopY / 2.0) {
+                        isMovingToNewLocation = YES;
+                    }
                 }
-            } else {
-                // Vertical pan.
-                CGFloat distanceFromStartY = fabsf(startCenter.y - newCenter.y);
-                if (distanceFromStartY > distanceStartStopY / 2.0) {
-                    [self finishSlidingTilesFromStartRow:self.slideStartRow startColumn:self.slideStartColumn];
+                
+                if (isMovingToNewLocation) {
+                    [self finishSlidingTilesFromStartRow:self.slideStartRow startColumn:self.slideStartColumn withCompletion:^{
+                        self.pannedView = nil;
+                    }];
                 } else {
-                    [self animateSlidingTiles];
+                    [self animateSlidingTilesWithCompletion:^{
+                        self.pannedView = nil;
+                    }];
                 }
             }
-            self.isPanning = NO;
         }
     }
 }
