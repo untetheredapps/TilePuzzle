@@ -78,13 +78,9 @@
     // Clean up from before.
     [[self.view subviews] makeObjectsPerformSelector:@selector(removeFromSuperview)];
     
-    // Background is a little bigger than container to keep outer borders same as inner borders.
-    self.tilesContainerBorderView = [[UIView alloc] initWithFrame:CGRectInset(self.sourceImageView.frame, - BORDER_THICKNESS, - BORDER_THICKNESS)];
-    self.tilesContainerBorderView.backgroundColor = [UIColor BORDER_COLOR];
-    [self.view addSubview:self.tilesContainerBorderView];
-    
+    // Establish container view for tiles.
     self.tilesContainerView = [[UIView alloc] initWithFrame:self.sourceImageView.frame];
-    self.tilesContainerView.backgroundColor = [UIColor BORDER_COLOR];
+    self.tilesContainerView.backgroundColor = [UIColor clearColor];
     [self.view addSubview:self.tilesContainerView];
     
     CGFloat sourceWidth = self.sourceImageView.bounds.size.width;
@@ -98,15 +94,25 @@
         for (NSUInteger column = 0; column < MAX_COLUMNS; column++) {
             Tile *tile = [self.tilesForRect getTileForRow:row column:column];
             if (!tile.hidden) {
+                // Border.
+                CGRect borderFrame;
+                borderFrame.size.width = roundf(tileWidth);
+                borderFrame.size.height = roundf(tileHeight);
+                borderFrame.origin.x = roundf(row * tileWidth);
+                borderFrame.origin.y = roundf(column * tileHeight);
+                UIView *borderView = [[UIView alloc] initWithFrame:borderFrame];
+                borderView.backgroundColor = [UIColor BORDER_COLOR];
+                [self.tilesContainerView addSubview:borderView];
+                
                 UIImageView *tileImageView = [[UIImageView alloc] initWithImage:self.sourceImage];
                 
                 // Tile frame corresponds to location on display.
-                CGRect frameRect;
-                frameRect.size.width = roundf(tileWidth - BORDER_THICKNESS * 2.0);
-                frameRect.size.height = roundf(tileHeight - BORDER_THICKNESS * 2.0);
-                frameRect.origin.x = roundf(row * tileWidth + BORDER_THICKNESS);
-                frameRect.origin.y = roundf(column * tileHeight + BORDER_THICKNESS);
-                tileImageView.frame = frameRect;
+                CGRect imageFrame;
+                imageFrame.size.width = roundf(tileWidth - BORDER_THICKNESS * 2.0);
+                imageFrame.size.height = roundf(tileHeight - BORDER_THICKNESS * 2.0);
+                imageFrame.origin.x = BORDER_THICKNESS;
+                imageFrame.origin.y = BORDER_THICKNESS;
+                tileImageView.frame = imageFrame;
                 
                 // Tile content corresponds to row and column of tiles original location.
                 CGRect cropRect;
@@ -118,7 +124,7 @@
                 [tileImageView setImage:[UIImage imageWithCGImage:imageRef]];
                 CGImageRelease(imageRef);
                 
-                [self.tilesContainerView addSubview:tileImageView];
+                [borderView addSubview:tileImageView];
             }
         }
     }
