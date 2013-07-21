@@ -160,6 +160,7 @@
         Tile *tile = [self.tilesForRect getTileForRow:row column:c];
         if (tile.hidden) {
             found = YES;
+            *foundColumn = c;
             break;
         }
     }
